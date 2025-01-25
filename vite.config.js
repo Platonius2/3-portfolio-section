@@ -9,6 +9,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        main: './index.html'
+      },
       output: {
         manualChunks: undefined,
         inlineDynamicImports: true
@@ -24,5 +27,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['imagesloaded', 'react', 'react-dom', 'jquery']
-  }
+  },
+  publicDir: 'public',
+  base: './'
 }) 

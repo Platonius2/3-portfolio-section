@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Three Particle Morphing Text</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+</head>
+<body>
+    <div class="canvas-container"></div>
+    <div class="triggers">
+        <span data-color="#00E5FF">14.8M+
+<br>VIEWS</span>
+        <span data-color="#FFA500">140+
+<br>PROJECTS</span>
+        <span data-color="#FF69B4">$ 50K+
+<br>IN REVENUE</span>
+    </div>
+
+    <!-- Three.js and its modules -->
+    <script src='https://unpkg.com/three@0.138.0/build/three.js'></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    
+    <!-- Font loader and text geometry -->
+    <script src="https://unpkg.com/three@0.138.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/geometries/TextGeometry.js"></script>
+    
+    <!-- Animation library -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js'></script>
+    
+    <!-- Main application -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

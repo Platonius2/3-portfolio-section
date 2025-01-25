@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Portfolio Section</title>
-  <script type="module" crossorigin src="/assets/index-K4TVifKb.js"></script>
+  <script type="module" crossorigin src="/assets/index-B9cC4ey1.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-5gCfXpjB.css">
 </head>
 <body>
@@ -328,8 +328,20 @@ https://devloop01.github.io/voyage-slider/images/machu-pichu.jpg" alt="Image 2" 
     </main>
 
     <!-- Scripts -->
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js'></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+    <script>
+        // Wait for DOM to be fully loaded
+        $(document).ready(function() {
+            // Initialize tilt effect on team cards
+            $('.card').tilt({
+                maxTilt: 5,
+                glare: true,
+                maxGlare: .1,
+                scale: 1.02
+            });
+        });
+    </script>
     <script src="/script team section.js" defer></script>
 </body>
 </html>

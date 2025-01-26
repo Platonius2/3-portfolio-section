@@ -65,16 +65,65 @@ document.addEventListener('DOMContentLoaded', function() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('appear');
-          observer.unobserve(entry.target); // Stop observing once animation is triggered
+          // Don't unobserve to allow re-animation when scrolling back
         }
       });
     }, {
-      threshold: 0.1, // Trigger when at least 10% of the card is visible
-      rootMargin: '50px' // Start animation slightly before the card comes into view
+      threshold: 0.2,
+      rootMargin: '50px'
     });
 
     cards.forEach(card => {
       observer.observe(card);
     });
   }, 100); // Small delay to ensure React has finished rendering
+
+  // Initialize tilt effect with optimized settings
+  if (typeof jQuery !== 'undefined' && jQuery.fn.tilt) {
+    jQuery('.team-section .card').tilt({
+      maxTilt: 8,
+      perspective: 1500,
+      scale: 1.02,
+      speed: 800,
+      glare: true,
+      maxGlare: 0.2,
+      easing: "cubic-bezier(.03,.98,.52,.99)"
+    });
+  }
+
+  // Preload images for better performance
+  const preloadImages = () => {
+    const imageElements = document.querySelectorAll('.team-section .img_box');
+    imageElements.forEach(imgBox => {
+      const style = getComputedStyle(imgBox);
+      const imageUrl = style.backgroundImage.slice(4, -1).replace(/["']/g, "");
+      
+      if (imageUrl && imageUrl !== 'none') {
+        const img = new Image();
+        img.src = imageUrl;
+      }
+    });
+  };
+
+  // Call preload after a short delay
+  setTimeout(preloadImages, 100);
+
+  // Handle window resize for responsive adjustments
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (typeof jQuery !== 'undefined' && jQuery.fn.tilt) {
+        jQuery('.team-section .card').tilt('destroy').tilt({
+          maxTilt: window.innerWidth < 768 ? 5 : 8,
+          perspective: 1500,
+          scale: window.innerWidth < 768 ? 1.01 : 1.02,
+          speed: 800,
+          glare: true,
+          maxGlare: 0.2,
+          easing: "cubic-bezier(.03,.98,.52,.99)"
+        });
+      }
+    }, 250);
+  });
 });

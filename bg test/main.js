@@ -4,11 +4,11 @@ import { NeatGradient } from "./node_modules/@firecms/neat/dist/index.es.js";
 const config = {
     colors: [
         {
-            color: '#5E5E5E',
+            color: '#1E1E1E',
             enabled: true,
         },
         {
-            color: '#03162D',
+            color: '#2C2C2C',
             enabled: true,
         },
         {
@@ -16,33 +16,33 @@ const config = {
             enabled: true,
         },
         {
-            color: '#121212',
+            color: '#333333',
             enabled: true,
         },
         {
-            color: '#02192B',
+            color: '#1A1A1A',
             enabled: true,
         },
     ],
-    speed: 2,
-    horizontalPressure: 3,
+    speed: 1,
+    horizontalPressure: 5,
     verticalPressure: 5,
-    waveFrequencyX: 3,
-    waveFrequencyY: 5,
-    waveAmplitude: 6,
-    shadows: 3,
-    highlights: 4,
-    colorBrightness: 1,
-    colorSaturation: 1,
+    waveFrequencyX: 2,
+    waveFrequencyY: 2,
+    waveAmplitude: 10,
+    shadows: 5,
+    highlights: 5,
+    colorBrightness: 1.2,
+    colorSaturation: 1.2,
     wireframe: false,
-    colorBlending: 7,
-    backgroundColor: '#003FFF',
+    colorBlending: 10,
+    backgroundColor: '#000000',
     backgroundAlpha: 1,
-    grainScale: 2,
-    grainSparsity: 0.1,
-    grainIntensity: 0.1,
-    grainSpeed: 1.5,
-    resolution: 0.35,
+    grainScale: 1.5,
+    grainSparsity: 0.2,
+    grainIntensity: 0.2,
+    grainSpeed: 1,
+    resolution: 1,
 };
 
 // Initialize the gradient
@@ -60,7 +60,7 @@ document.body.appendChild(content);
 
 let lastScrollY = window.scrollY;
 let scrollSpeed = 0;
-const maxSpeed = 10;
+const maxSpeed = 5;
 
 // Update animation based on scroll
 window.addEventListener('scroll', () => {
@@ -72,6 +72,6 @@ window.addEventListener('scroll', () => {
     
     clearTimeout(window.scrollTimeout);
     window.scrollTimeout = setTimeout(() => {
-        neat.speed = 0;
+        neat.speed = 1;
     }, 150);
 }); 

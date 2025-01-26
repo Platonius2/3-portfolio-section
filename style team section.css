@@ -4,7 +4,7 @@
 .team-section {
   min-height: 100vh;
   height: 100vh; /* Force exact viewport height */
-  background: #1a1a1a; /* Changed to match other sections */
+  background: transparent; /* Remove background to show gradient */
   font-family: 'Open Sans', sans-serif;
   scroll-snap-align: start;
   scroll-snap-stop: always;

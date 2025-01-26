@@ -5,7 +5,8 @@
     overflow-x: hidden;
     scroll-behavior: smooth;
     scroll-snap-type: y mandatory;
-    background-color: var(--bg-color);
+    /* Remove background color to show gradient */
+    background: transparent;
     /* Hide scrollbar for different browsers while maintaining functionality */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
@@ -49,7 +50,7 @@ html::-webkit-scrollbar {
 
 /* Clients Section */
 .clients-section {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 .clients-grid {
@@ -63,12 +64,12 @@ html::-webkit-scrollbar {
 
 /* Portfolio Section */
 .portfolio-section {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 /* About Section */
 .about-section {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 .about-content {
@@ -92,12 +93,12 @@ html::-webkit-scrollbar {
 
 /* Team Section */
 .team-section {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 /* Contact Section */
 .contact-section {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 /* Navigation Dots (Optional) */

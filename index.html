@@ -9,8 +9,42 @@
   <link rel="stylesheet" href="./style contact.css">
   <link rel="stylesheet" href="./sections.css">
   <script type="module" src="./script-team-section.js"></script>
+  <style>
+    #gradient {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: #000000;
+    }
+    .page-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+  </style>
 </head>
 <body>
+    <!-- Background Gradient -->
+    <canvas id="gradient"></canvas>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./bg test/node_modules/three/build/three.module.js"
+        }
+    }
+    </script>
+    <script type="module" src="./bg test/main.js"></script>
+
     <!-- React Root -->
     <div id="root"></div>
 
@@ -228,6 +262,7 @@ https://devloop01.github.io/voyage-slider/images/machu-pichu.jpg" alt="Image 2" 
                         </svg>
                     </button>
                 </div>
+                <div class="background-overlay"></div>
             </div>
         </section>
 

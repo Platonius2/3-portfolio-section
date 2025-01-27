@@ -20,16 +20,37 @@
         top: 0;
         left: 0;
         z-index: 0;
+        opacity: 1;
+        mix-blend-mode: normal;
+    }
+    /* Handle dynamically created NEAT caption */
+    [href*="neat.firecms.co"] {
+        transform: translateY(200vh) !important;
+        position: fixed !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: -99999 !important;
     }
     body {
         margin: 0;
         padding: 0;
         overflow-x: hidden;
         background-color: #000000;
+        scroll-snap-type: y mandatory;
+        overflow-y: scroll;
     }
     .page-wrapper {
         position: relative;
         z-index: 1;
+        background: transparent;
+    }
+    .section {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
   </style>
 </head>

@@ -1,48 +1,48 @@
 import { NeatGradient } from "./node_modules/@firecms/neat/dist/index.es.js";
 
-// Define your config
+// Define the gradient configuration
 const config = {
     colors: [
-        {
-            color: '#1E1E1E',
-            enabled: true,
-        },
-        {
-            color: '#2C2C2C',
-            enabled: true,
-        },
         {
             color: '#000000',
             enabled: true,
         },
         {
-            color: '#333333',
+            color: '#020D18',
             enabled: true,
         },
         {
-            color: '#1A1A1A',
+            color: '#505050',
+            enabled: true,
+        },
+        {
+            color: '#020210',
+            enabled: true,
+        },
+        {
+            color: '#02152A',
             enabled: true,
         },
     ],
-    speed: 1,
-    horizontalPressure: 5,
+    speed: 0, // Keep at 0 for scroll-based animation
+    horizontalPressure: 3,
     verticalPressure: 5,
-    waveFrequencyX: 2,
-    waveFrequencyY: 2,
-    waveAmplitude: 10,
-    shadows: 5,
-    highlights: 5,
-    colorBrightness: 1.2,
-    colorSaturation: 1.2,
+    waveFrequencyX: 3,
+    waveFrequencyY: 5,
+    waveAmplitude: 8,
+    shadows: 7,
+    highlights: 1,
+    colorBrightness: 0.8,
+    colorSaturation: 0,
     wireframe: false,
-    colorBlending: 10,
-    backgroundColor: '#000000',
+    colorBlending: 7,
+    backgroundColor: '#003FFF',
     backgroundAlpha: 1,
-    grainScale: 1.5,
-    grainSparsity: 0.2,
-    grainIntensity: 0.2,
-    grainSpeed: 1,
-    resolution: 1,
+    grainScale: 2,
+    grainSparsity: 0.04,
+    grainIntensity: 0.1,
+    grainSpeed: 1.5,
+    resolution: 0.35,
 };
 
 // Initialize the gradient
@@ -51,27 +51,97 @@ const neat = new NeatGradient({
     ...config
 });
 
-// Create a long scrollable content
-const content = document.createElement('div');
-content.style.height = '500vh';
-content.style.position = 'relative';
-content.style.zIndex = '1';
-document.body.appendChild(content);
+class ScrollAnimationManager {
+    constructor() {
+        this.lastScrollY = window.scrollY;
+        this.maxSpeed = 8;
+        this.scrollMultiplier = 0.3;
+        this.animationDuration = 700; // Duration in ms
+        this.animationStartTime = 0;
+        this.targetSpeed = 0;
+        this.isAnimating = false;
+        this.setupScrollHandling();
+        this.startAnimationLoop();
+    }
 
-let lastScrollY = window.scrollY;
-let scrollSpeed = 0;
-const maxSpeed = 5;
+    setupScrollHandling() {
+        // Handle wheel events
+        window.addEventListener('wheel', (e) => {
+            const delta = Math.abs(e.deltaY);
+            this.handleScroll(delta);
+        }, { passive: true });
 
-// Update animation based on scroll
-window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-    scrollSpeed = Math.abs(currentScrollY - lastScrollY);
-    lastScrollY = currentScrollY;
-    
-    neat.speed = Math.min(scrollSpeed, maxSpeed);
-    
-    clearTimeout(window.scrollTimeout);
-    window.scrollTimeout = setTimeout(() => {
-        neat.speed = 1;
-    }, 150);
+        // Handle scroll events
+        window.addEventListener('scroll', () => {
+            const delta = Math.abs(window.scrollY - this.lastScrollY);
+            this.handleScroll(delta);
+            this.lastScrollY = window.scrollY;
+        }, { passive: true });
+
+        // Handle touch events
+        let lastTouchY = 0;
+        
+        window.addEventListener('touchstart', (e) => {
+            lastTouchY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const delta = Math.abs(touchY - lastTouchY);
+            this.handleScroll(delta);
+            lastTouchY = touchY;
+        }, { passive: true });
+    }
+
+    handleScroll(delta) {
+        // Calculate target speed based on scroll delta
+        this.targetSpeed = Math.min(this.maxSpeed, delta * this.scrollMultiplier);
+        this.animationStartTime = performance.now();
+        this.isAnimating = true;
+    }
+
+    easeOutQuad(t) {
+        return 1 - (1 - t) * (1 - t);
+    }
+
+    startAnimationLoop() {
+        const animate = () => {
+            if (this.isAnimating) {
+                const currentTime = performance.now();
+                const elapsed = currentTime - this.animationStartTime;
+                const progress = Math.min(elapsed / this.animationDuration, 1);
+                
+                // Use easing function for smooth animation
+                const eased = this.easeOutQuad(progress);
+                
+                if (progress < 1) {
+                    // During animation, interpolate speed
+                    neat.speed = this.targetSpeed * (1 - eased);
+                } else {
+                    // Animation complete
+                    neat.speed = 0;
+                    this.isAnimating = false;
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }
+}
+
+// Initialize scroll animation manager
+const scrollManager = new ScrollAnimationManager();
+
+// Handle page visibility
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        neat.speed = 0;
+    }
+});
+
+// Cleanup on page unload
+window.addEventListener('unload', () => {
+    neat.speed = 0;
 }); 

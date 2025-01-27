@@ -722,3 +722,44 @@ window.addEventListener('unload', function() {
 		jQuery('.team-row .card').tilt.destroy();
 	}
 });
+
+// Appear animations
+const appearElements = document.querySelectorAll('.appear, .appear-left, .appear-right, .appear-scale');
+
+const appearOptions = {
+	threshold: 0.2,
+	rootMargin: "0px 0px -100px 0px"
+};
+
+const appearOnScroll = new IntersectionObserver((entries, appearOnScroll) => {
+	entries.forEach(entry => {
+		if (!entry.isIntersecting) return;
+		entry.target.classList.add('active');
+		appearOnScroll.unobserve(entry.target);
+	});
+}, appearOptions);
+
+appearElements.forEach(element => {
+	appearOnScroll.observe(element);
+});
+
+// Appear animations for contact section
+const contactElements = document.querySelectorAll('.contact-inquiry-text, .contact-email, .contact-button, .contact-logo');
+
+const contactObserver = new IntersectionObserver((entries) => {
+	entries.forEach(entry => {
+		if (entry.isIntersecting) {
+			entry.target.classList.add('active');
+			// Don't unobserve to allow re-animation when scrolling back
+		} else {
+			entry.target.classList.remove('active');
+		}
+	});
+}, {
+	threshold: 0.5,
+	rootMargin: "0px"
+});
+
+contactElements.forEach(element => {
+	contactObserver.observe(element);
+});

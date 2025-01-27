@@ -46,17 +46,16 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     });
 
-    // Initialize enhanced tilt effect only for team section cards
+    // Initialize tilt effect with only glare (no actual tilt)
     if (cards.length && jQuery.fn.tilt) {
       jQuery('.team-section .card').tilt({
-        maxTilt: 15,
-        perspective: 1500,
-        scale: 1.05,
-        speed: 1000,
+        maxTilt: 0,  // No tilt
+        perspective: 1000,
+        scale: 1,    // No scale effect
+        speed: 400,
         glare: true,
-        maxGlare: 0.3,
-        easing: "cubic-bezier(.03,.98,.52,.99)",
-        transition: true
+        maxGlare: 0.2,
+        easing: "cubic-bezier(.03,.98,.52,.99)"
       });
     }
 
@@ -78,19 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }, 100); // Small delay to ensure React has finished rendering
 
-  // Initialize tilt effect with optimized settings
-  if (typeof jQuery !== 'undefined' && jQuery.fn.tilt) {
-    jQuery('.team-section .card').tilt({
-      maxTilt: 8,
-      perspective: 1500,
-      scale: 1.02,
-      speed: 800,
-      glare: true,
-      maxGlare: 0.2,
-      easing: "cubic-bezier(.03,.98,.52,.99)"
-    });
-  }
-
   // Preload images for better performance
   const preloadImages = () => {
     const imageElements = document.querySelectorAll('.team-section .img_box');
@@ -107,23 +93,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Call preload after a short delay
   setTimeout(preloadImages, 100);
-
-  // Handle window resize for responsive adjustments
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      if (typeof jQuery !== 'undefined' && jQuery.fn.tilt) {
-        jQuery('.team-section .card').tilt('destroy').tilt({
-          maxTilt: window.innerWidth < 768 ? 5 : 8,
-          perspective: 1500,
-          scale: window.innerWidth < 768 ? 1.01 : 1.02,
-          speed: 800,
-          glare: true,
-          maxGlare: 0.2,
-          easing: "cubic-bezier(.03,.98,.52,.99)"
-        });
-      }
-    }, 250);
-  });
 });

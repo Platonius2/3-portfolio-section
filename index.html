@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./style contact.css">
   <link rel="stylesheet" href="./sections.css">
   <link rel="stylesheet" href="./style-footer.css">
+  <link rel="stylesheet" href="./style-three-section.css">
   <script type="module" src="./script-team-section.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,33 +58,45 @@
         justify-content: center;
     }
   </style>
+  <script type="importmap">
+    {
+        "imports": {
+            "three": "./node_modules/three/build/three.module.js",
+            "three/examples/jsm/postprocessing/EffectComposer.js": "./node_modules/three/examples/jsm/postprocessing/EffectComposer.js",
+            "three/examples/jsm/postprocessing/RenderPass.js": "./node_modules/three/examples/jsm/postprocessing/RenderPass.js",
+            "three/examples/jsm/postprocessing/UnrealBloomPass.js": "./node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js",
+            "three/examples/jsm/loaders/FontLoader.js": "./node_modules/three/examples/jsm/loaders/FontLoader.js",
+            "three/examples/jsm/geometries/TextGeometry.js": "./node_modules/three/examples/jsm/geometries/TextGeometry.js"
+        }
+    }
+  </script>
 </head>
 <body>
     <!-- Background Gradient -->
     <canvas id="gradient"></canvas>
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "./bg test/node_modules/three/build/three.module.js"
-        }
-    }
-    </script>
     <script type="module" src="./bg test/main.js"></script>
-
-    <!-- React Root -->
-    <div id="root"></div>
-
-    <!-- Overlay for expanded slides -->
-    <div class="overlay"></div>
-    <div class="expanded-info">
-        <div class="expanded-info--text">
-            <span data-title>Press ESC to close</span>
-            <span data-subtitle>Use arrow keys to navigate</span>
-        </div>
-    </div>
 
     <!-- Non-React Sections -->
     <main class="page-wrapper">
+        <!-- Three.js Section -->
+        <section class="section three-section">
+            <div class="content">
+                <div class="trigger"></div>
+            </div>
+        </section>
+
+        <!-- React Root -->
+        <div id="root"></div>
+
+        <!-- Overlay for expanded slides -->
+        <div class="overlay"></div>
+        <div class="expanded-info">
+            <div class="expanded-info--text">
+                <span data-title>Press ESC to close</span>
+                <span data-subtitle>Use arrow keys to navigate</span>
+            </div>
+        </div>
+
         <!-- Section 2: Portfolio -->
         <section id="portfolio" class="section portfolio-section">
             <div class="section-container">
@@ -410,6 +423,14 @@ https://devloop01.github.io/voyage-slider/images/machu-pichu.jpg" alt="Image 2" 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script type="module" src="/src/main.jsx"></script>
     <script type="module" src="/script.js"></script>
+    <script type="module" src="./js/three-section.js"></script>
+    <script type="module">
+        import { ThreeSection } from './js/three-section.js';
+        
+        // Initialize Three.js section
+        const threeSection = new ThreeSection();
+        threeSection.initialize();
+    </script>
 </body>
 </html>
 

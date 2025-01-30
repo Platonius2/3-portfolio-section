@@ -8,7 +8,11 @@
   <link rel="stylesheet" href="./style team section.css">
   <link rel="stylesheet" href="./style contact.css">
   <link rel="stylesheet" href="./sections.css">
+  <link rel="stylesheet" href="./style-footer.css">
   <script type="module" src="./script-team-section.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css?family=IBM%20Plex%20Sans:300,500" rel="stylesheet">
   <style>
     #gradient {
         width: 100vw;
@@ -376,14 +380,30 @@ https://devloop01.github.io/voyage-slider/images/machu-pichu.jpg" alt="Image 2" 
                 <div class="contact-content">
                     <p class="contact-inquiry-text">for inquiries contact us via</p>
                     <h1 class="contact-email">MEDIA@FFWD.SPACE</h1>
-                    <button class="contact-button">
-                        <span class="contact-text">CONTACT VIA EMAIL</span>
-                        <span class="contact-shimmer"></span>
+                    <button class="contact-button" onclick="window.location.href='mailto:MEDIA@FFWD.SPACE'">
+                        <span class="text">CONTACT VIA EMAIL</span>
+                        <span class="shimmer"></span>
                     </button>
                     <img src="logo fast forward media white.png" alt="Fast Forward Media Logo" class="contact-logo">
                 </div>
             </div>
         </section>
+
+        <!-- Footer Wrapper -->
+        <div class="footer-wrapper">
+            <div class="footer-blur-overlay"></div>
+            <div class="footer-gradient-overlay"></div>
+            <footer id="footer">
+                <div class="col col1">
+                    <h3>FFWD</h3>
+                    <p class="company-name">Fast Forward Media</p>
+                    <img src="logo fast forward media white.png" alt="FFWD Logo" class="footer-logo">
+                    <p class="legal-name">Phithon Company LLP</p>
+                    <p class="address">128 City Rd.<br>London, EC1V 2NX</p>
+                    <p class="phone">+420736768466</p>
+                </div>
+            </footer>
+        </div>
     </main>
 
     <!-- Scripts -->

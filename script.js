@@ -763,3 +763,75 @@ const contactObserver = new IntersectionObserver((entries) => {
 contactElements.forEach(element => {
 	contactObserver.observe(element);
 });
+
+// Footer functionality
+const footerWrapper = document.querySelector('.footer-wrapper');
+const contactSection = document.querySelector('.contact-section');
+let isFooterVisible = false;
+let hasReachedBottom = false;
+let lastWheelTime = 0;
+
+// Handle footer visibility
+function handleFooterVisibility(event) {
+	// Only handle wheel/scroll events
+	if (!event.deltaY) return;
+
+	const currentTime = Date.now();
+	const contactRect = contactSection.getBoundingClientRect();
+	const isAtBottom = contactRect.bottom <= window.innerHeight;
+
+	// First time reaching bottom
+	if (isAtBottom && !hasReachedBottom) {
+		hasReachedBottom = true;
+		return;
+	}
+
+	// Show footer only if we're at bottom and user attempts to scroll down again
+	if (hasReachedBottom && !isFooterVisible && event.deltaY > 0 && 
+		currentTime - lastWheelTime > 100) { // Debounce wheel events
+		footerWrapper.classList.add('visible');
+		isFooterVisible = true;
+		document.body.style.overflow = 'hidden';
+	}
+
+	// Hide footer on scroll up
+	if (isFooterVisible && event.deltaY < 0) {
+		footerWrapper.classList.remove('visible');
+		isFooterVisible = false;
+		document.body.style.overflow = '';
+		hasReachedBottom = false;
+	}
+
+	lastWheelTime = currentTime;
+}
+
+// Event listeners
+window.addEventListener('wheel', handleFooterVisibility, { passive: true });
+
+// Reset state when leaving contact section
+const contactObserverReset = new IntersectionObserver((entries) => {
+	entries.forEach(entry => {
+		if (!entry.isIntersecting) {
+			hasReachedBottom = false;
+			if (isFooterVisible) {
+				footerWrapper.classList.remove('visible');
+				isFooterVisible = false;
+				document.body.style.overflow = '';
+			}
+		}
+	});
+}, {
+	threshold: 0.5
+});
+
+contactObserverReset.observe(contactSection);
+
+// Handle escape key to close footer
+document.addEventListener('keydown', (e) => {
+	if (e.key === 'Escape' && isFooterVisible) {
+		footerWrapper.classList.remove('visible');
+		isFooterVisible = false;
+		document.body.style.overflow = '';
+		hasReachedBottom = false;
+	}
+});

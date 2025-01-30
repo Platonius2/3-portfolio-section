@@ -9,25 +9,25 @@
     0.946 44.1%, 0.95 46.5%, 0.998 57.2%, 1.007, 1.011 63.3%, 1.012 68.3%,
     0.998 84%, 1
   );
-    --spring-duration: 1.33s;
+    --spring-duration: 1.5s;
 }
 
-@property --contact-shimmer {
+@property --shimmer {
     syntax: "<angle>";
     inherits: false;
     initial-value: 33deg;
 }
 
-@keyframes contact-shimmer {
+@keyframes shimmer {
     0% {
-        --contact-shimmer: 0deg;
+        --shimmer: 0deg;
     }
     100% {
-        --contact-shimmer: 360deg;
+        --shimmer: 360deg;
     }
 }
 
-@keyframes contact-shine {
+@keyframes shine {
     0% {
         opacity: 0;
     }
@@ -42,7 +42,7 @@
     }
 }
 
-@keyframes contact-text {
+@keyframes text {
     0% {
         background-position: 100% center;
     }    
@@ -63,6 +63,7 @@
     scroll-snap-stop: always;
     overflow: hidden;
     position: relative;
+    z-index: 1;
 }
 
 .contact-container {
@@ -74,6 +75,7 @@
     align-items: center;
     padding: 0 2rem;
     position: relative;
+    z-index: 2;
 }
 
 .contact-content {
@@ -83,48 +85,76 @@
     gap: 4rem;
     width: 100%;
     position: relative;
+    z-index: 2;
+}
+
+/* Footer trigger positioning */
+.footer-trigger {
+    position: absolute;
+    bottom: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 5;
 }
 
+/* Contact Button Styles */
 .contact-button {
-    color: #111;
+    color: var(--bg);
     font-weight: 600;
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
     background-image: linear-gradient(
         315deg,
         #ffc4ec -10%,
         #efdbfd 50%,
         #ffedd6 110%
-    );
+    ) !important;
     padding: 1em 2em;
     position: relative;
     isolation: isolate;
-    box-shadow: 0 2px 3px 1px hsl(var(--glow-hue) 50% 20% / 50%), inset 0 -10px 20px -10px hsla(var(--shadow-hue),10%,90%,95%);
+    box-shadow: 0 2px 3px 1px hsl(var(--glow-hue) 50% 20% / 50%), 
+                inset 0 -10px 20px -10px hsla(var(--shadow-hue),10%,90%,95%);
     border-radius: 0.66em;
-    scale: 1;
-    transition: all var(--spring-duration) var(--spring-easing);
     border: none;
+    scale: 1;
     cursor: pointer;
-    z-index: 5;
+    transition: scale var(--spring-duration) cubic-bezier(0.2, 1.4, 0.4, 0.9),
+                box-shadow 0.3s ease !important;
+    z-index: 3;
+    transform-origin: center;
 }
 
 .contact-button:hover:not(:active),
-.contact-button.active {
-    transition-duration: calc(var(--spring-duration)*0.5);
+.contact-button:focus-visible {
     scale: 1.2;
-    box-shadow: 0 4px 8px -2px hsl(var(--glow-hue) 50% 20% / 50%), inset 0 0 0 transparent;
+    box-shadow: 0 4px 8px -2px hsl(var(--glow-hue) 50% 20% / 50%), 
+                inset 0 0 0 transparent;
 }
 
 .contact-button:active {
-    scale: 1.1;
-    transition-duration: calc(var(--spring-duration)*0.5);
+    scale: 0.92;
+    transition: scale 0.2s cubic-bezier(0.34, 1.8, 0.64, 1);
 }
 
-.contact-shimmer {
+.contact-button .shimmer {
     position: absolute;
     inset: -40px;
     border-radius: inherit;
     mask-image: conic-gradient(
-        from var(--contact-shimmer, 0deg),
+        from var(--shimmer, 0deg),
+        transparent 0%,
+        transparent 10%,
+        black 36%,
+        black 45%,
+        transparent 50%,
+        transparent 60%,
+        black 85%,
+        black 95%,
+        transparent 100%
+    );
+    -webkit-mask-image: conic-gradient(
+        from var(--shimmer, 0deg),
         transparent 0%,
         transparent 10%,
         black 36%,
@@ -136,64 +166,75 @@
         transparent 100%
     );
     mask-size: cover;
+    -webkit-mask-size: cover;
     mix-blend-mode: plus-lighter;
-    animation: contact-shimmer 1s linear infinite both;
-}
-
-.contact-button:hover .contact-shimmer::before,
-.contact-button:hover .contact-shimmer::after,
-.contact-button.active .contact-shimmer::before,
-.contact-button.active .contact-shimmer::after {
-    opacity: 1;
-    animation: contact-shine 1.2s ease-in 1 forwards;
-}
-
-.contact-shimmer::before,
-.contact-shimmer::after {
-    transition: all 0.5s ease;
-    opacity: 0;
-    content: "";
-    border-radius: inherit;
-    position: absolute;
-    mix-blend-mode: color;
-    inset: 40px;
     pointer-events: none;
 }
 
-.contact-shimmer::before {
-    box-shadow: 0 0 3px 2px hsl(var(--glow-hue) 20% 95%),
+.contact-button:hover .shimmer {
+    animation: shimmer 1s linear infinite both;
+}
+
+.contact-button .shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 40px;
+    border-radius: inherit;
+    box-shadow: 
+        0 0 3px 2px hsl(var(--glow-hue) 20% 95%),
         0 0 7px 4px hsl(var(--glow-hue) 20% 80%),
         0 0 13px 4px hsl(var(--glow-hue) 50% 70%),
         0 0 25px 5px hsl(var(--glow-hue) 100% 70%);
+    opacity: 0;
     z-index: -1;
+    transition: opacity 0.5s ease;
 }
 
-.contact-shimmer::after {
-    box-shadow: inset 0 0 0 1px hsl(var(--glow-hue) 70% 95%),
+.contact-button .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 40px;
+    border-radius: inherit;
+    box-shadow: 
+        inset 0 0 0 1px hsl(var(--glow-hue) 70% 95%),
         inset 0 0 2px 1px hsl(var(--glow-hue) 100% 80%),
         inset 0 0 5px 2px hsl(var(--glow-hue) 100% 70%);
+    opacity: 0;
     z-index: 2;
+    transition: opacity 0.5s ease;
 }
 
-.contact-text {
-    font-family: 'Clash Display', sans-serif;
-    color: #111;
-    font-weight: 600;
-    font-size: 1.2rem;
+.contact-button:hover .shimmer::before,
+.contact-button:hover .shimmer::after {
+    opacity: 1;
+    animation: shine 1.2s ease-in 1 forwards;
+}
+
+.contact-button .text {
     position: relative;
-    z-index: 1;
+    z-index: 4;
+    color: #000;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     background-clip: text;
     -webkit-background-clip: text;
-    background-image: linear-gradient(120deg, #111, hsla(var(--glow-hue),100%,20%,0.9) 40%, hsla(var(--glow-hue),100%,30%,1) 50%, #111 52%);
-    background-repeat: no-repeat;
-    background-size: 300% 300%;
-    background-position: center 200%;
+    transition: color 0.3s ease;
 }
 
-.contact-button:hover .contact-text,
-.contact-button.active .contact-text {
-    animation: contact-text .66s ease-in 1 both;
-    color: #111;
+.contact-button:hover .text {
+    color: #000;
+    background-image: linear-gradient(
+        120deg, 
+        #000, 
+        #000 40%, 
+        #000 50%, 
+        #000 52%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-size: 300% 300%;
+    animation: text .66s ease-in 1 both;
 }
 
 .contact-email {
@@ -225,6 +266,7 @@
     opacity: 0.45;
     filter: brightness(1);
     z-index: 1;
+    pointer-events: none;
 }
 
 @media screen and (max-width: 768px) {
@@ -281,7 +323,7 @@
     transform: translate(-50%, -50%);
 }
 
-/* Staggered delays - shorter and closer together */
+/* Staggered delays */
 .contact-inquiry-text { transition-delay: 0.2s; }
 .contact-email { transition-delay: 0.4s; }
 .contact-button { transition-delay: 0.6s; }

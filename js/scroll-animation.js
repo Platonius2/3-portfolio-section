@@ -105,4 +105,137 @@ export class ScrollAnimation {
             lastTouchY = touchY;
         }, { passive: false });
     }
+}
+
+function initializeScrolling() {
+    // Get all sections including React sections
+    const reactSection = document.querySelector('#root > div');
+    const nonReactSections = document.querySelectorAll('.page-wrapper .section');
+    const allSections = [reactSection, ...nonReactSections];
+    const footer = document.getElementById('footer');
+    const contactSection = document.querySelector('.contact-section');
+    let isFooterVisible = false;
+    let lastScrollY = window.scrollY;
+    let isInContactSection = false;
+
+    // Add test button handler
+    const footerTrigger = document.querySelector('.footer-trigger');
+    if (footerTrigger) {
+        footerTrigger.addEventListener('click', () => {
+            footer.classList.toggle('visible');
+            isFooterVisible = !isFooterVisible;
+        });
+    }
+
+    // Handle footer visibility
+    function handleFooterVisibility(e) {
+        if (!isInContactSection) return;
+
+        const contactRect = contactSection.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const scrollableDistance = contactRect.height - windowHeight;
+        const scrollProgress = Math.abs(contactRect.top) / scrollableDistance;
+        
+        // Show footer when scrolled more than 80% through contact section
+        if (scrollProgress > 0.8 && e.deltaY > 0) {
+            if (!isFooterVisible) {
+                e.preventDefault();
+                footer.classList.add('visible');
+                isFooterVisible = true;
+                // Prevent further scrolling
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        // Hide footer when scrolling up from the bottom
+        else if (scrollProgress <= 0.8 && e.deltaY < 0) {
+            if (isFooterVisible) {
+                footer.classList.remove('visible');
+                isFooterVisible = false;
+                // Re-enable scrolling
+                document.body.style.overflow = '';
+            }
+        }
+    }
+
+    // Update active section on scroll
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.5
+    };
+
+    const observerCallback = (entries) => {
+        entries.forEach(entry => {
+            if (entry.target === contactSection) {
+                isInContactSection = entry.isIntersecting;
+            }
+            
+            if (entry.isIntersecting && !document.querySelector('.overlay.active')) {
+                const dots = document.querySelectorAll('.section-nav button');
+                dots.forEach(dot => dot.classList.remove('active'));
+                const index = Array.from(allSections).indexOf(entry.target);
+                if (index >= 0) {
+                    dots[index].classList.add('active');
+                }
+            }
+        });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    allSections.forEach(section => observer.observe(section));
+
+    // Smooth scrolling with footer handling
+    let isScrolling = false;
+    window.addEventListener('wheel', (e) => {
+        // Always prevent scroll if a card is expanded
+        if (document.querySelector('.overlay.active')) {
+            e.preventDefault();
+            return;
+        }
+
+        // Handle footer visibility first
+        if (isInContactSection) {
+            handleFooterVisibility(e);
+            if (isFooterVisible) {
+                e.preventDefault();
+                return;
+            }
+        }
+
+        if (isScrolling) {
+            e.preventDefault();
+            return;
+        }
+
+        const currentSection = Array.from(allSections).findIndex(section => {
+            const rect = section.getBoundingClientRect();
+            return rect.top >= -window.innerHeight / 2 && rect.top <= window.innerHeight / 2;
+        });
+
+        if (e.deltaY > 0 && currentSection < allSections.length - 1) {
+            e.preventDefault();
+            allSections[currentSection + 1].scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+            isScrolling = true;
+            setTimeout(() => { isScrolling = false; }, 700);
+        } else if (e.deltaY < 0 && currentSection > 0) {
+            e.preventDefault();
+            allSections[currentSection - 1].scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+            isScrolling = true;
+            setTimeout(() => { isScrolling = false; }, 700);
+        }
+    }, { passive: false });
+
+    // Handle escape key to close footer
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isFooterVisible) {
+            footer.classList.remove('visible');
+            isFooterVisible = false;
+        }
+    });
 } 

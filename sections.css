@@ -3,19 +3,17 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Main wrapper styles */
 .page-wrapper {
-    height: 100vh;
-    overflow-y: scroll;
+    min-height: 100vh;
+    overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
     background: transparent;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     position: relative;
     z-index: 1;
 }
@@ -37,12 +35,10 @@ html::-webkit-scrollbar {
 
 /* General section styles */
 .section {
-    height: 100vh;
+    min-height: 100vh;
     width: 100%;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
     position: relative;
-    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -115,10 +111,62 @@ html::-webkit-scrollbar {
     background: transparent;
 }
 
-/* Contact Section */
+/* Contact Section - special handling */
 .contact-section {
     background: transparent;
-    scroll-snap-align: end;
+    position: relative;
+    overflow: visible;
+    min-height: 100vh;
+    scroll-snap-align: start;
+}
+
+.contact-container {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Footer section */
+.footer-wrapper {
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    z-index: 90;
+}
+
+/* Remove scroll snap from the last section */
+.section:last-of-type {
+    scroll-snap-align: none;
+    scroll-snap-stop: none;
+}
+
+/* When footer is visible */
+.contact-section:has(footer.visible) .contact-container {
+    opacity: 0.3;
+}
+
+/* Footer specific overrides */
+.contact-section footer {
+    position: absolute;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    min-height: 100vh;
+    z-index: 2;
+    transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.contact-section footer.visible {
+    bottom: 0;
+}
+
+/* Ensure proper stacking context */
+.contact-section {
+    isolation: isolate;
 }
 
 /* Navigation Dots (Optional) */

@@ -195,12 +195,11 @@ const raf = new Raf();
 const tiltInstances = new Map();
 
 function init() {
-	// Wait for both React and non-React content to be ready
+	// Wait for content to be ready
 	const observer = new MutationObserver((mutations, obs) => {
-		const reactRoot = document.getElementById('root');
 		const nonReactSections = document.querySelector('.page-wrapper');
 		
-		if (reactRoot.children.length > 0 && nonReactSections) {
+		if (nonReactSections) {
 			obs.disconnect();
 			initializeScrolling();
 			initializeSlider();
@@ -214,10 +213,15 @@ function init() {
 }
 
 function initializeScrolling() {
-	// Get all sections including React sections
-	const reactSection = document.querySelector('#root > div');
+	// Get all sections
 	const nonReactSections = document.querySelectorAll('.page-wrapper .section');
-	const allSections = [reactSection, ...nonReactSections];
+	const allSections = [...nonReactSections];
+
+	// Ensure we have sections before proceeding
+	if (allSections.length === 0) {
+		console.warn('No sections found for scroll initialization');
+		return;
+	}
 
 	// Add navigation dots
 	const nav = document.createElement('nav');
@@ -231,7 +235,10 @@ function initializeScrolling() {
 		button.addEventListener('click', () => {
 			// Prevent scrolling if a card is expanded
 			if (!document.querySelector('.overlay.active')) {
-				section.scrollIntoView({ behavior: 'smooth' });
+				// Validate section exists before scrolling
+				if (section && typeof section.scrollIntoView === 'function') {
+					section.scrollIntoView({ behavior: 'smooth' });
+				}
 			}
 		});
 		li.appendChild(button);
@@ -265,7 +272,13 @@ function initializeScrolling() {
 	};
 
 	const observer = new IntersectionObserver(observerCallback, observerOptions);
-	allSections.forEach(section => observer.observe(section));
+	
+	// Observe each section after validating it exists
+	allSections.forEach(section => {
+		if (section) {
+			observer.observe(section);
+		}
+	});
 
 	// Keyboard navigation
 	document.addEventListener('keydown', (e) => {

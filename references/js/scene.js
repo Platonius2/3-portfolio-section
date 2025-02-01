@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { config } from './config.js';
 
 export class SceneManager {
     constructor() {
@@ -17,25 +18,18 @@ export class SceneManager {
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: true,
-            premultipliedAlpha: false,
-            stencil: false,
-            depth: true,
-            powerPreference: "high-performance"
+            premultipliedAlpha: false
         });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.toneMapping = THREE.NoToneMapping;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.setClearColor(0x000000, 0);
-        this.renderer.autoClear = true;
-        this.renderer.setClearAlpha(0);
         document.querySelector('.three-section').appendChild(this.renderer.domElement);
     }
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this.scene.background = null;
-        this.scene.fog = null;
     }
 
     setupCamera() {
@@ -63,12 +57,8 @@ export class SceneManager {
 
     setupPostProcessing() {
         this.composer = new EffectComposer(this.renderer);
-        this.composer.renderToScreen = true;
         
         const renderPass = new RenderPass(this.scene, this.camera);
-        renderPass.clearAlpha = 0;
-        renderPass.clearColor = new THREE.Color(0x000000);
-        renderPass.clear = true;
         this.composer.addPass(renderPass);
 
         const bloomPass = new UnrealBloomPass(
@@ -82,7 +72,6 @@ export class SceneManager {
         bloomPass.strength = 1.4;
         bloomPass.radius = 0.75;
         bloomPass.exposure = 0.9;
-        bloomPass.clearAlpha = 0;
 
         this.composer.addPass(bloomPass);
     }
@@ -110,7 +99,6 @@ export class SceneManager {
     }
 
     render() {
-        this.renderer.setClearAlpha(0);
         this.composer.render();
     }
 } 

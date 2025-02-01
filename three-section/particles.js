@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import { config, getResponsiveConfig, animationVars } from './config.js';
 
+// Check if GSAP plugins are available
+const hasBezierPlugin = gsap && gsap.plugins && gsap.plugins.BezierPlugin;
+const hasGSAPCore = typeof gsap !== 'undefined';
+
+if (hasGSAPCore && !hasBezierPlugin) {
+    console.warn('GSAP BezierPlugin not found. Using fallback animation.');
+}
+
 export class ParticleSystem {
     constructor(scene) {
         this.scene = scene;
@@ -29,7 +37,7 @@ export class ParticleSystem {
             uniforms: {
                 size: { value: config.particleSize },
                 color: { value: new THREE.Color(0xFFFFFF) },
-                opacity: { value: 1.0 }
+                opacity: { value: 0.8 }
             },
             vertexShader: `
                 attribute float scale;
@@ -37,7 +45,7 @@ export class ParticleSystem {
                 
                 void main() {
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * scale * (300.0 / -mvPosition.z);
+                    gl_PointSize = size * scale * (2000.0 / -mvPosition.z);
                     gl_Position = projectionMatrix * mvPosition;
                 }
             `,
@@ -53,23 +61,22 @@ export class ParticleSystem {
                         discard;
                     }
                     
-                    float core = 1.0 - smoothstep(0.0, 0.15, dist);
-                    float innerGlow = 1.0 - smoothstep(0.15, 0.35, dist);
-                    float outerGlow = 1.0 - smoothstep(0.35, 0.5, dist);
+                    float core = smoothstep(0.15, 0.0, dist);
+                    float edge = smoothstep(0.5, 0.15, dist);
+                    float intensity = core + edge * 0.3;
                     
-                    float intensity = core * 1.0 + innerGlow * 0.5 + outerGlow * 0.2;
-                    intensity = pow(intensity, 1.5);
+                    float alpha = intensity * opacity;
+                    if (alpha < 0.01) discard;
                     
-                    float noise = fract(sin(dot(gl_PointCoord, vec2(12.9898, 78.233))) * 43758.5453);
-                    intensity += noise * 0.015 - 0.0075;
-                    
-                    vec3 finalColor = color * (1.0 + core * 0.5);
-                    
-                    gl_FragColor = vec4(finalColor, opacity * intensity);
+                    vec3 finalColor = color * (1.0 + core * 0.2);
+                    gl_FragColor = vec4(finalColor, alpha);
                 }
             `,
             transparent: true,
-            blending: THREE.AdditiveBlending,
+            blending: THREE.CustomBlending,
+            blendEquation: THREE.AddEquation,
+            blendSrc: THREE.SrcAlphaFactor,
+            blendDst: THREE.OneMinusSrcAlphaFactor,
             depthWrite: false,
             depthTest: true
         });
@@ -104,21 +111,23 @@ export class ParticleSystem {
         if (!newParticles || !newParticles.attributes || !newParticles.attributes.position || !newParticles.attributes.scale) return;
         
         // Speed up rotation during morph
-        gsap.to(animationVars, {
-            duration: 0.1,
-            ease: "power4.in",
-            speed: config.morphAnimationSpeed / 100,
-            onComplete: () => this.slowDown()
-        });
+        if (hasGSAPCore) {
+            gsap.to(animationVars, {
+                duration: 0.1,
+                ease: "power4.in",
+                speed: config.morphAnimationSpeed / 100,
+                onComplete: () => this.slowDown()
+            });
 
-        // Change color
-        gsap.to(animationVars, {
-            duration: 1,
-            ease: "none",
-            color: color
-        });
+            // Change color
+            gsap.to(animationVars, {
+                duration: 1,
+                ease: "none",
+                color: color
+            });
+        }
 
-        // Morph particles with scale and curved animation
+        // Morph particles with scale and animation
         const positions = this.particles.attributes.position.array;
         const scales = this.particles.attributes.scale.array;
         const newPositions = newParticles.attributes.position.array;
@@ -140,49 +149,80 @@ export class ParticleSystem {
                 scale: newScales[i]
             };
 
-            // Random timing for each particle
+            // Calculate animation parameters
+            const dx = targetVertex.x - currentVertex.x;
+            const dy = targetVertex.y - currentVertex.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const radius = distance * 0.8;
             const delay = Math.random() * 0.2;
             const duration = 1.0 + Math.random() * 0.25;
 
-            // Animate with custom path
-            gsap.to(currentVertex, {
-                duration: duration,
-                x: targetVertex.x,
-                y: targetVertex.y,
-                z: targetVertex.z,
-                scale: targetVertex.scale,
-                delay: delay,
-                ease: "power2.inOut",
-                onUpdate: () => {
-                    positions[i3] = currentVertex.x;
-                    positions[i3 + 1] = currentVertex.y;
-                    positions[i3 + 2] = currentVertex.z;
-                    scales[i] = currentVertex.scale;
-                    this.particles.attributes.position.needsUpdate = true;
-                    this.particles.attributes.scale.needsUpdate = true;
+            if (hasGSAPCore) {
+                if (hasBezierPlugin) {
+                    // Use bezier animation if plugin is available
+                    gsap.to(currentVertex, {
+                        duration: duration,
+                        ease: "power1.inOut",
+                        scale: targetVertex.scale,
+                        delay: delay,
+                        bezier: {
+                            type: "thru",
+                            curviness: 1,
+                            values: [
+                                { x: currentVertex.x, y: currentVertex.y, z: currentVertex.z },
+                                { 
+                                    x: currentVertex.x + (dx * 0.25) + (Math.random() - 0.5) * (radius * 0.2),
+                                    y: currentVertex.y + (dy * 0.25) + Math.sin(Math.PI * 0.25) * radius,
+                                    z: currentVertex.z + Math.cos(Math.PI * 0.25) * (radius * 0.5)
+                                },
+                                { 
+                                    x: currentVertex.x + (dx * 0.5) + (Math.random() - 0.5) * (radius * 0.2),
+                                    y: currentVertex.y + (dy * 0.5) + Math.sin(Math.PI * 0.5) * radius,
+                                    z: currentVertex.z + Math.cos(Math.PI * 0.5) * (radius * 0.5)
+                                },
+                                { 
+                                    x: currentVertex.x + (dx * 0.75) + (Math.random() - 0.5) * (radius * 0.2),
+                                    y: currentVertex.y + (dy * 0.75) + Math.sin(Math.PI * 0.75) * radius,
+                                    z: currentVertex.z + Math.cos(Math.PI * 0.75) * (radius * 0.5)
+                                },
+                                { x: targetVertex.x, y: targetVertex.y, z: targetVertex.z }
+                            ]
+                        },
+                        onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
+                    });
+                } else {
+                    // Fallback to simple animation if plugin isn't available
+                    gsap.to(currentVertex, {
+                        duration: duration,
+                        ease: "power1.inOut",
+                        x: targetVertex.x,
+                        y: targetVertex.y,
+                        z: targetVertex.z,
+                        scale: targetVertex.scale,
+                        delay: delay,
+                        onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
+                    });
                 }
-            });
-
-            // Add a separate animation for the curved path
-            const pathRadius = Math.random() * 2;
-            const pathOffset = Math.random() * Math.PI * 2;
-            
-            gsap.to(currentVertex, {
-                duration: duration * 0.5,
-                z: pathRadius,
-                ease: "sine.inOut",
-                yoyo: true,
-                repeat: 1,
-                delay: delay
-            });
+            }
         }
 
         // Camera rotation
-        gsap.to(animationVars, {
-            duration: 1,
-            ease: "power1.inOut",
-            rotation: animationVars.rotation === 45 ? -45 : 45
-        });
+        if (hasGSAPCore) {
+            gsap.to(animationVars, {
+                duration: 1,
+                ease: "power1.inOut",
+                rotation: animationVars.rotation === 45 ? -45 : 45
+            });
+        }
+    }
+
+    updateParticle(i3, vertex, positions, scales) {
+        positions[i3] = vertex.x;
+        positions[i3 + 1] = vertex.y;
+        positions[i3 + 2] = vertex.z;
+        scales[i3 / 3] = vertex.scale;
+        this.particles.attributes.position.needsUpdate = true;
+        this.particles.attributes.scale.needsUpdate = true;
     }
 
     slowDown() {

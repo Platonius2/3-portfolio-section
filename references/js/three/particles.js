@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'https://unpkg.com/three@0.138.0/build/three.module.js';
 import { config, getResponsiveConfig, animationVars } from './config.js';
 
 export class ParticleSystem {
@@ -64,7 +64,6 @@ export class ParticleSystem {
                     intensity += noise * 0.015 - 0.0075;
                     
                     vec3 finalColor = color * (1.0 + core * 0.5);
-                    
                     gl_FragColor = vec4(finalColor, opacity * intensity);
                 }
             `,
@@ -140,19 +139,52 @@ export class ParticleSystem {
                 scale: newScales[i]
             };
 
+            // Calculate radius for circular movement based on distance
+            const dx = targetVertex.x - currentVertex.x;
+            const dy = targetVertex.y - currentVertex.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const radius = distance * 0.8;
+
             // Random timing for each particle
             const delay = Math.random() * 0.2;
             const duration = 1.0 + Math.random() * 0.25;
 
-            // Animate with custom path
-            gsap.to(currentVertex, {
+            // Create timeline for curved movement
+            const timeline = gsap.timeline();
+            
+            // Store original values for bezier calculation
+            const startX = currentVertex.x;
+            const startY = currentVertex.y;
+            const startZ = currentVertex.z;
+
+            timeline.to(currentVertex, {
                 duration: duration,
-                x: targetVertex.x,
-                y: targetVertex.y,
-                z: targetVertex.z,
+                ease: "power1.inOut",
                 scale: targetVertex.scale,
                 delay: delay,
-                ease: "power2.inOut",
+                bezier: {
+                    type: "thru",
+                    curviness: 1,
+                    values: [
+                        { x: startX, y: startY, z: startZ },
+                        { 
+                            x: startX + (dx * 0.25) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.25) + Math.sin(Math.PI * 0.25) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.25) * (radius * 0.5)
+                        },
+                        { 
+                            x: startX + (dx * 0.5) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.5) + Math.sin(Math.PI * 0.5) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.5) * (radius * 0.5)
+                        },
+                        { 
+                            x: startX + (dx * 0.75) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.75) + Math.sin(Math.PI * 0.75) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.75) * (radius * 0.5)
+                        },
+                        { x: targetVertex.x, y: targetVertex.y, z: targetVertex.z }
+                    ]
+                },
                 onUpdate: () => {
                     positions[i3] = currentVertex.x;
                     positions[i3 + 1] = currentVertex.y;
@@ -161,19 +193,6 @@ export class ParticleSystem {
                     this.particles.attributes.position.needsUpdate = true;
                     this.particles.attributes.scale.needsUpdate = true;
                 }
-            });
-
-            // Add a separate animation for the curved path
-            const pathRadius = Math.random() * 2;
-            const pathOffset = Math.random() * Math.PI * 2;
-            
-            gsap.to(currentVertex, {
-                duration: duration * 0.5,
-                z: pathRadius,
-                ease: "sine.inOut",
-                yoyo: true,
-                repeat: 1,
-                delay: delay
             });
         }
 

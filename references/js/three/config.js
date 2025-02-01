@@ -23,7 +23,7 @@ export const getResponsiveConfig = () => {
     };
     
     // Particle configuration with width-based sizing
-    const baseParticleCount = 5000;
+    const baseParticleCount = 15000;
     const particleScaleFactor = Math.max(0.2, Math.min(1, screenWidth / referenceWidth));
     
     return {
@@ -33,8 +33,8 @@ export const getResponsiveConfig = () => {
         // Particle configuration with improved scaling
         particleCount: Math.floor(baseParticleCount * particleScaleFactor),
         particleSize: screenWidth <= 1250 
-            ? 1.0  // Much larger size for small screens
-            : 1.5, // Much larger size for large screens
+            ? 0.03  // Much larger particles for small screens
+            : 0.01, // Normal size for large screens
         
         // Animation configuration
         defaultAnimationSpeed: 1,

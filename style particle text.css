@@ -2,7 +2,7 @@ body {
   font-family: 'Bebas Neue', sans-serif;
   margin: 0;
   overflow-x: hidden;
-  background: radial-gradient(#222, #000);
+  background: transparent;
   background-attachment: fixed;
   min-height: 300vh; /* Minimum height for scrolling content */
   position: relative;

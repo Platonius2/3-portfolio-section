@@ -7,7 +7,7 @@ export class TextManager {
     constructor(particleSystem) {
         this.particleSystem = particleSystem;
         this.texts = [];
-        this.triggers = document.querySelectorAll('.triggers span');
+        this.triggers = document.getElementsByTagName('span');
         this.currentFont = null;
         this.currentIndex = 0;
         this.loadFont();
@@ -43,28 +43,24 @@ export class TextManager {
     loadFont() {
         const loader = new FontLoader();
         
-        return new Promise((resolve, reject) => {
-            loader.load(config.typeface, 
-                (font) => {
-                    console.log('Font loaded successfully');
-                    this.currentFont = font;
-                    
-                    requestAnimationFrame(() => {
-                        Array.from(this.triggers).forEach((trigger, idx) => {
-                            this.createText(trigger, idx, font);
-                        });
-                        // Set initial state
-                        this.updateActiveText(0);
-                        resolve(font);
+        loader.load(config.typeface, 
+            (font) => {
+                console.log('Font loaded successfully');
+                this.currentFont = font;
+                
+                requestAnimationFrame(() => {
+                    Array.from(this.triggers).forEach((trigger, idx) => {
+                        this.createText(trigger, idx, font);
                     });
-                },
-                undefined,
-                (error) => {
-                    console.error('Error loading font:', error);
-                    reject(error);
-                }
-            );
-        });
+                    // Set initial state
+                    this.updateActiveText(0);
+                });
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading font:', error);
+            }
+        );
     }
 
     updateActiveText(index) {
@@ -82,6 +78,14 @@ export class TextManager {
         }
     }
 
+    processTexts(font) {
+        requestAnimationFrame(() => {
+            Array.from(this.triggers).forEach((trigger, idx) => {
+                this.createText(trigger, idx, font);
+            });
+        });
+    }
+
     createText(trigger, idx, font) {
         try {
             if (!font) return;
@@ -96,7 +100,7 @@ export class TextManager {
             const geometry = new TextGeometry(trigger.textContent, {
                 font: font,
                 size: textConfig.baseSize,
-                depth: 0,
+                height: 0,
                 curveSegments: 4,
                 bevelEnabled: false
             });
@@ -116,9 +120,7 @@ export class TextManager {
                 const points = this.generateGridPoints(geometry);
                 if (points && points.length > 0) {
                     this.particleSystem.createVertices(this.texts[idx].particles, points);
-                    if (idx === 0) {
-                        this.particleSystem.morphTo(this.texts[idx].particles, trigger.dataset.color);
-                    }
+                    this.enableTrigger(trigger, idx);
                 }
             });
             
@@ -188,5 +190,13 @@ export class TextManager {
         tempGeometry.dispose();
 
         return points;
+    }
+
+    enableTrigger(trigger, idx) {
+        if (!this.texts[idx] || !this.texts[idx].particles) return;
+        
+        if (idx === 0) {
+            this.particleSystem.morphTo(this.texts[idx].particles, trigger.dataset.color);
+        }
     }
 } 

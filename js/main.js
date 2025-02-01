@@ -2,7 +2,6 @@ import { SceneManager } from './scene.js';
 import { ParticleSystem } from './particles.js';
 import { TextManager } from './text.js';
 import { ScrollAnimation } from './scroll-animation.js';
-import { animationVars } from './config.js';
 
 class App {
     constructor() {
@@ -10,29 +9,33 @@ class App {
     }
 
     async preloadResources() {
-        // Show loading indicator if needed
-        const loadingPromises = [];
-
-        // Initialize Three.js components in parallel
-        loadingPromises.push(this.initThreeComponents());
-
-        // Wait for all resources to load
-        await Promise.all(loadingPromises);
-        
-        // Initialize the rest of the application
-        this.init();
+        try {
+            // Initialize Three.js components in parallel
+            await this.initThreeComponents();
+            
+            // Initialize the rest of the application
+            this.init();
+        } catch (error) {
+            console.error('Error initializing application:', error);
+        }
     }
 
     async initThreeComponents() {
-        // Initialize core components first
-        this.sceneManager = new SceneManager();
-        this.particleSystem = new ParticleSystem(this.sceneManager.scene);
-        
-        // Initialize text manager last (it depends on the particle system)
-        this.textManager = new TextManager(this.particleSystem);
-        
-        // Initialize scroll animation
-        this.scrollAnimation = new ScrollAnimation(this.textManager);
+        try {
+            // Initialize core components first
+            this.sceneManager = new SceneManager();
+            this.particleSystem = new ParticleSystem(this.sceneManager.scene);
+            
+            // Initialize text manager and wait for font to load
+            this.textManager = new TextManager(this.particleSystem);
+            await this.textManager.loadFont();
+            
+            // Initialize scroll animation after text is ready
+            this.scrollAnimation = new ScrollAnimation(this.textManager);
+        } catch (error) {
+            console.error('Error initializing Three.js components:', error);
+            throw error;
+        }
     }
 
     init() {
@@ -42,10 +45,16 @@ class App {
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        this.particleSystem.update();
-        this.sceneManager.render();
+        if (this.particleSystem) {
+            this.particleSystem.update();
+        }
+        if (this.sceneManager) {
+            this.sceneManager.render();
+        }
     }
 }
 
-// Initialize the application
-new App(); 
+// Initialize the application when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new App();
+}); 

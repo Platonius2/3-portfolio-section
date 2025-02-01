@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { config } from './config.js';
 
 export class SceneManager {
     constructor() {
@@ -20,16 +21,32 @@ export class SceneManager {
             premultipliedAlpha: false,
             stencil: false,
             depth: true,
-            powerPreference: "high-performance"
+            powerPreference: "high-performance",
+            preserveDrawingBuffer: false
         });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.toneMapping = THREE.NoToneMapping;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.setClearColor(0x000000, 0);
-        this.renderer.autoClear = true;
-        this.renderer.setClearAlpha(0);
-        document.querySelector('.three-section').appendChild(this.renderer.domElement);
+        this.renderer.autoClear = false;
+        
+        const container = document.querySelector('.canvas-container');
+        container.appendChild(this.renderer.domElement);
+        
+        // Set canvas style for transparency
+        this.renderer.domElement.style.position = 'absolute';
+        this.renderer.domElement.style.top = '0';
+        this.renderer.domElement.style.left = '0';
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
+        this.renderer.domElement.style.pointerEvents = 'none';
+        this.renderer.domElement.style.mixBlendMode = 'screen';
+        this.renderer.domElement.style.background = 'transparent';
+        
+        // Clear any background color on the container
+        container.style.background = 'transparent';
+        container.style.backgroundColor = 'transparent';
     }
 
     setupScene() {
@@ -62,27 +79,47 @@ export class SceneManager {
     }
 
     setupPostProcessing() {
-        this.composer = new EffectComposer(this.renderer);
+        const renderTarget = new THREE.WebGLRenderTarget(
+            window.innerWidth, 
+            window.innerHeight, 
+            {
+                minFilter: THREE.LinearFilter,
+                magFilter: THREE.LinearFilter,
+                format: THREE.RGBAFormat,
+                encoding: THREE.sRGBEncoding,
+                type: THREE.HalfFloatType,
+                stencilBuffer: false,
+                depthBuffer: true,
+                alpha: true,
+                premultiplyAlpha: false
+            }
+        );
+
+        this.composer = new EffectComposer(this.renderer, renderTarget);
         this.composer.renderToScreen = true;
         
         const renderPass = new RenderPass(this.scene, this.camera);
-        renderPass.clearAlpha = 0;
-        renderPass.clearColor = new THREE.Color(0x000000);
         renderPass.clear = true;
+        renderPass.clearDepth = true;
+        renderPass.clearAlpha = true;
+        renderPass.clearColor = new THREE.Color(0x000000);
+        renderPass.clearAlpha = 0;
         this.composer.addPass(renderPass);
 
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.2,
-            0.35,
-            0.15
+            0.5,
+            0.4,
+            0.85
         );
 
-        bloomPass.threshold = 0.12;
-        bloomPass.strength = 1.4;
-        bloomPass.radius = 0.75;
-        bloomPass.exposure = 0.9;
-        bloomPass.clearAlpha = 0;
+        bloomPass.threshold = 0.85;
+        bloomPass.strength = 0.5;
+        bloomPass.radius = 0.4;
+        bloomPass.exposure = 0.8;
+        bloomPass.clear = true;
+        bloomPass.clearAlpha = true;
+        bloomPass.renderToScreen = true;
 
         this.composer.addPass(bloomPass);
     }
@@ -110,7 +147,16 @@ export class SceneManager {
     }
 
     render() {
-        this.renderer.setClearAlpha(0);
+        // Clear everything
+        this.renderer.clear(true, true, true);
+        this.renderer.clearColor();
+        this.renderer.clearDepth();
+        
+        // Ensure scene is transparent
+        this.scene.background = null;
+        this.renderer.setClearColor(0x000000, 0);
+        
+        // Render with composer
         this.composer.render();
     }
 } 

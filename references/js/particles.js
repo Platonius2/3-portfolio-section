@@ -46,25 +46,32 @@ export class ParticleSystem {
                 uniform float opacity;
                 
                 void main() {
+                    // Calculate distance from center of point
                     vec2 center = gl_PointCoord - vec2(0.5);
                     float dist = length(center);
                     
+                    // Discard pixels outside circle
                     if (dist > 0.5) {
                         discard;
                     }
                     
+                    // Create three-layered effect: core, inner glow, and outer glow
                     float core = 1.0 - smoothstep(0.0, 0.15, dist);
                     float innerGlow = 1.0 - smoothstep(0.15, 0.35, dist);
                     float outerGlow = 1.0 - smoothstep(0.35, 0.5, dist);
                     
+                    // Combine layers with different intensities
                     float intensity = core * 1.0 + innerGlow * 0.5 + outerGlow * 0.2;
-                    intensity = pow(intensity, 1.5);
+                    intensity = pow(intensity, 1.5); // Slightly sharper falloff
                     
+                    // Add subtle variation to prevent banding
                     float noise = fract(sin(dot(gl_PointCoord, vec2(12.9898, 78.233))) * 43758.5453);
                     intensity += noise * 0.015 - 0.0075;
                     
-                    vec3 finalColor = color * (1.0 + core * 0.5);
+                    // Create a brighter core
+                    vec3 finalColor = color * (1.0 + core * 0.5); // Boost core brightness
                     
+                    // Output color with enhanced definition
                     gl_FragColor = vec4(finalColor, opacity * intensity);
                 }
             `,
@@ -140,19 +147,52 @@ export class ParticleSystem {
                 scale: newScales[i]
             };
 
+            // Calculate radius for circular movement based on distance
+            const dx = targetVertex.x - currentVertex.x;
+            const dy = targetVertex.y - currentVertex.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const radius = distance * 0.8;
+
             // Random timing for each particle
             const delay = Math.random() * 0.2;
             const duration = 1.0 + Math.random() * 0.25;
 
-            // Animate with custom path
-            gsap.to(currentVertex, {
+            // Create timeline for curved movement
+            const timeline = gsap.timeline();
+            
+            // Store original values for bezier calculation
+            const startX = currentVertex.x;
+            const startY = currentVertex.y;
+            const startZ = currentVertex.z;
+
+            timeline.to(currentVertex, {
                 duration: duration,
-                x: targetVertex.x,
-                y: targetVertex.y,
-                z: targetVertex.z,
+                ease: "power1.inOut",
                 scale: targetVertex.scale,
                 delay: delay,
-                ease: "power2.inOut",
+                bezier: {
+                    type: "thru",
+                    curviness: 1,
+                    values: [
+                        { x: startX, y: startY, z: startZ },
+                        { 
+                            x: startX + (dx * 0.25) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.25) + Math.sin(Math.PI * 0.25) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.25) * (radius * 0.5)
+                        },
+                        { 
+                            x: startX + (dx * 0.5) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.5) + Math.sin(Math.PI * 0.5) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.5) * (radius * 0.5)
+                        },
+                        { 
+                            x: startX + (dx * 0.75) + (Math.random() - 0.5) * (radius * 0.2),
+                            y: startY + (dy * 0.75) + Math.sin(Math.PI * 0.75) * radius,
+                            z: startZ + Math.cos(Math.PI * 0.75) * (radius * 0.5)
+                        },
+                        { x: targetVertex.x, y: targetVertex.y, z: targetVertex.z }
+                    ]
+                },
                 onUpdate: () => {
                     positions[i3] = currentVertex.x;
                     positions[i3 + 1] = currentVertex.y;
@@ -161,19 +201,6 @@ export class ParticleSystem {
                     this.particles.attributes.position.needsUpdate = true;
                     this.particles.attributes.scale.needsUpdate = true;
                 }
-            });
-
-            // Add a separate animation for the curved path
-            const pathRadius = Math.random() * 2;
-            const pathOffset = Math.random() * Math.PI * 2;
-            
-            gsap.to(currentVertex, {
-                duration: duration * 0.5,
-                z: pathRadius,
-                ease: "sine.inOut",
-                yoyo: true,
-                repeat: 1,
-                delay: delay
             });
         }
 

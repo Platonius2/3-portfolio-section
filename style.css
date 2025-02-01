@@ -10,7 +10,7 @@
 	--font-archivo: "Archivo", sans-serif;
 	--font-clash-display: "Clash Display", sans-serif;
 	--bg-color: transparent;
-	--bg-color-transparent: rgba(0, 0, 0, 0.5);
+	--bg-color-transparent: transparent;
 }
 
 * {
@@ -483,7 +483,7 @@ button:focus {
 	left: 0;
 	right: 0;
 	height: 100vh;
-	background: rgba(0, 0, 0, 0.85) !important;
+	background: rgba(0, 0, 0, 0.5) !important;
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity var(--slide-transition-duration) var(--slide-transition-easing);
@@ -502,7 +502,7 @@ button:focus {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: rgba(0, 0, 0, 0.85);
+	background: rgba(0, 0, 0, 0.5);
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity var(--slide-transition-duration) var(--slide-transition-easing);
@@ -803,7 +803,7 @@ button:focus {
 	margin: 0 auto;
 	padding: 4rem 2rem;
 	color: white;
-	background: var(--bg-color);
+	background: transparent;
 	position: relative;
 	z-index: 1;
 }

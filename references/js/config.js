@@ -15,16 +15,14 @@ export const getResponsiveConfig = () => {
     
     // Text size calculations based purely on width
     const textConfig = {
-        baseSize: screenWidth <= 1250
-            ? screenWidth * 0.1 * scaleFactor  // Much larger text for mobile screens
-            : screenWidth * 0.05 * scaleFactor, // Normal size for larger screens
-        maxWidth: screenWidth * 0.85,
-        maxHeight: screenHeight * 0.25
+        baseSize: screenWidth * 0.05 * scaleFactor,  // Increased base size for better visibility
+        maxWidth: screenWidth * 0.85,  // Not used anymore
+        maxHeight: screenHeight * 0.25  // Not used anymore
     };
     
     // Particle configuration with width-based sizing
     const baseParticleCount = 5000;
-    const particleScaleFactor = Math.max(0.2, Math.min(1, screenWidth / referenceWidth));
+    const particleScaleFactor = Math.max(0.3, Math.min(1, screenWidth / referenceWidth));
     
     return {
         // Text configuration
@@ -33,8 +31,8 @@ export const getResponsiveConfig = () => {
         // Particle configuration with improved scaling
         particleCount: Math.floor(baseParticleCount * particleScaleFactor),
         particleSize: screenWidth <= 1250 
-            ? 1.0  // Much larger size for small screens
-            : 1.5, // Much larger size for large screens
+            ? screenWidth * 0.02  // Much larger particles for small screens
+            : screenWidth * 0.02, // Much larger particles for large screens
         
         // Animation configuration
         defaultAnimationSpeed: 1,

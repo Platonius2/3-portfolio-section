@@ -5,22 +5,27 @@ const config = {
     colors: [
         {
             color: '#000000',
+            alpha: 0,
             enabled: true,
         },
         {
             color: '#020D18',
+            alpha: 0,
             enabled: true,
         },
         {
             color: '#505050',
+            alpha: 0,
             enabled: true,
         },
         {
             color: '#020210',
+            alpha: 0,
             enabled: true,
         },
         {
             color: '#02152A',
+            alpha: 0,
             enabled: true,
         },
     ],
@@ -36,8 +41,8 @@ const config = {
     colorSaturation: 0,
     wireframe: false,
     colorBlending: 7,
-    backgroundColor: '#003FFF',
-    backgroundAlpha: 1,
+    backgroundColor: '#000000',
+    backgroundAlpha: 0,
     grainScale: 2,
     grainSparsity: 0.04,
     grainIntensity: 0.1,

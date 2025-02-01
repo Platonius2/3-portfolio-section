@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import * as THREE from 'https://unpkg.com/three@0.138.0/build/three.module.js';
+import { FontLoader } from 'https://unpkg.com/three@0.138.0/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'https://unpkg.com/three@0.138.0/examples/jsm/geometries/TextGeometry.js';
 import { config, getResponsiveConfig } from './config.js';
 
 export class TextManager {
@@ -76,14 +76,6 @@ export class TextManager {
         if (this.texts[index] && this.texts[index].particles) {
             this.particleSystem.morphTo(this.texts[index].particles, this.triggers[index].dataset.color);
         }
-    }
-
-    processTexts(font) {
-        requestAnimationFrame(() => {
-            Array.from(this.triggers).forEach((trigger, idx) => {
-                this.createText(trigger, idx, font);
-            });
-        });
     }
 
     createText(trigger, idx, font) {

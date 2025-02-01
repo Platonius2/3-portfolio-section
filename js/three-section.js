@@ -2,14 +2,14 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { TextManager } from './TextManager.js';
+import { SceneManager } from './scene.js';
+import { ParticleSystem } from './particles.js';
+import { TextManager } from './text.js';
 
 export class ThreeSection {
     constructor() {
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.composer = null;
+        this.sceneManager = null;
+        this.particleSystem = null;
         this.textManager = null;
         this.animationFrame = null;
         this.clock = new THREE.Clock();
@@ -19,84 +19,81 @@ export class ThreeSection {
     async initialize() {
         if (this.isInitialized) return;
 
-        // Setup renderer
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.querySelector('.three-section').appendChild(this.renderer.domElement);
-
-        // Setup camera
-        this.camera.position.z = 5;
-
-        // Setup post-processing
-        this.setupPostProcessing();
-
+        // Setup scene manager
+        this.sceneManager = new SceneManager();
+        
+        // Setup particle system
+        this.particleSystem = new ParticleSystem(this.sceneManager.scene);
+        
         // Initialize text manager
-        this.textManager = new TextManager(this.scene, this.camera);
-        await this.textManager.loadFont('./public/fonts/helvetiker_regular.typeface.json');
+        this.textManager = new TextManager(this.particleSystem);
 
-        // Create text
-        this.createText();
-
-        // Setup resize handler
-        window.addEventListener('resize', this.handleResize.bind(this));
+        // Setup scroll handling
+        this.setupScrollHandling();
 
         this.isInitialized = true;
         this.animate();
     }
 
-    setupPostProcessing() {
-        this.composer = new EffectComposer(this.renderer);
-        
-        const renderPass = new RenderPass(this.scene, this.camera);
-        this.composer.addPass(renderPass);
+    setupScrollHandling() {
+        let isScrolling = false;
+        let scrollTimeout;
 
-        const bloomPass = new UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.5,  // strength
-            0.4,  // radius
-            0.85  // threshold
-        );
-        this.composer.addPass(bloomPass);
-    }
+        window.addEventListener('wheel', (e) => {
+            if (!isScrolling) {
+                isScrolling = true;
+                if (e.deltaY > 0) {
+                    this.textManager.updateActiveText((this.textManager.currentIndex + 1) % this.textManager.texts.length);
+                } else {
+                    this.textManager.updateActiveText((this.textManager.currentIndex - 1 + this.textManager.texts.length) % this.textManager.texts.length);
+                }
 
-    createText() {
-        const texts = [
-            { text: 'FAST', position: { x: 0, y: 1, z: 0 }, color: 0x00ff00 },
-            { text: 'FORWARD', position: { x: 0, y: -1, z: 0 }, color: 0x00ff00 }
-        ];
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    isScrolling = false;
+                }, 1000);
 
-        texts.forEach(({ text, position, color }) => {
-            this.textManager.createText(text, position, {
-                size: 1,
-                height: 0.2,
-                color
-            });
-        });
-    }
+                e.preventDefault();
+            }
+        }, { passive: false });
 
-    handleResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        // Handle touch events
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: false });
 
-        this.camera.aspect = width / height;
-        this.camera.updateProjectionMatrix();
+        window.addEventListener('touchmove', (e) => {
+            const touchEndY = e.touches[0].clientY;
+            const deltaY = touchEndY - touchStartY;
 
-        this.renderer.setSize(width, height);
-        this.composer.setSize(width, height);
+            if (Math.abs(deltaY) > 50) {
+                if (deltaY < 0) {
+                    this.textManager.updateActiveText((this.textManager.currentIndex + 1) % this.textManager.texts.length);
+                } else {
+                    this.textManager.updateActiveText((this.textManager.currentIndex - 1 + this.textManager.texts.length) % this.textManager.texts.length);
+                }
+                touchStartY = touchEndY;
+            }
+
+            e.preventDefault();
+        }, { passive: false });
     }
 
     animate() {
         const delta = this.clock.getElapsedTime();
 
-        // Animate particles
-        if (this.textManager) {
-            this.textManager.animateParticles(delta);
+        // Update particle system
+        if (this.particleSystem) {
+            this.particleSystem.update();
         }
 
         // Render scene with post-processing
-        this.composer.render();
+        if (this.sceneManager) {
+            this.sceneManager.render();
+        }
 
-        this.animationFrame = requestAnimationFrame(this.animate.bind(this));
+        this.animationFrame = requestAnimationFrame(() => this.animate());
     }
 
     dispose() {
@@ -104,26 +101,15 @@ export class ThreeSection {
             cancelAnimationFrame(this.animationFrame);
         }
 
-        if (this.textManager) {
-            this.textManager.dispose();
+        if (this.particleSystem) {
+            // Particle system cleanup will be handled by scene disposal
+            this.particleSystem = null;
         }
 
-        this.scene.traverse((object) => {
-            if (object.geometry) {
-                object.geometry.dispose();
-            }
-            if (object.material) {
-                if (Array.isArray(object.material)) {
-                    object.material.forEach(material => material.dispose());
-                } else {
-                    object.material.dispose();
-                }
-            }
-        });
-
-        this.renderer.dispose();
-        this.composer.dispose();
-
-        window.removeEventListener('resize', this.handleResize.bind(this));
+        if (this.sceneManager) {
+            this.sceneManager.renderer.dispose();
+            this.sceneManager.composer.dispose();
+            this.sceneManager = null;
+        }
     }
 } 

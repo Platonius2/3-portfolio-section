@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js';
 
 export class TextManager {
     constructor(scene, camera) {
@@ -11,12 +12,14 @@ export class TextManager {
         this.texts = [];
         this.textMeshes = new Map();
         this.particleGroups = new Map();
+        this.currentIndex = 0;
+        this.isLocked = true;
     }
 
     async loadFont(fontPath) {
         return new Promise((resolve, reject) => {
             const loader = new FontLoader();
-            loader.load(fontPath, (font) => {
+            loader.load('https://threejs.org/examples/fonts/droid/droid_sans_regular.typeface.json', (font) => {
                 this.font = font;
                 resolve(font);
             }, undefined, reject);
@@ -76,34 +79,52 @@ export class TextManager {
 
     createParticlesFromGeometry(geometry, color) {
         const particlesGeometry = new THREE.BufferGeometry();
-        const particleCount = 10000;
+        const particleCount = 15000;
         const positions = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
 
+        // Create a grid of points that form the text shape
         const tempGeometry = geometry.clone();
         const tempMesh = new THREE.Mesh(tempGeometry);
         const box = new THREE.Box3().setFromObject(tempMesh);
         const size = box.getSize(new THREE.Vector3());
 
-        for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * size.x * 3;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * size.y * 3;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * size.z * 3;
+        // Create a grid of points
+        const gridSize = Math.ceil(Math.pow(particleCount, 1/3));
+        const spacing = Math.min(size.x, size.y, size.z) / gridSize;
 
-            const colorRGB = new THREE.Color(color);
-            colors[i * 3] = colorRGB.r;
-            colors[i * 3 + 1] = colorRGB.g;
-            colors[i * 3 + 2] = colorRGB.b;
+        let particleIndex = 0;
+        for (let x = 0; x < gridSize && particleIndex < particleCount; x++) {
+            for (let y = 0; y < gridSize && particleIndex < particleCount; y++) {
+                for (let z = 0; z < gridSize && particleIndex < particleCount; z++) {
+                    const px = (x / gridSize - 0.5) * size.x * 1.5;
+                    const py = (y / gridSize - 0.5) * size.y * 1.5;
+                    const pz = (z / gridSize - 0.5) * size.z * 1.5;
+
+                    positions[particleIndex * 3] = px;
+                    positions[particleIndex * 3 + 1] = py;
+                    positions[particleIndex * 3 + 2] = pz;
+
+                    const colorRGB = new THREE.Color(color);
+                    colors[particleIndex * 3] = colorRGB.r;
+                    colors[particleIndex * 3 + 1] = colorRGB.g;
+                    colors[particleIndex * 3 + 2] = colorRGB.b;
+
+                    particleIndex++;
+                }
+            }
         }
 
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         const particleMaterial = new THREE.PointsMaterial({
-            size: 0.02,
+            size: 0.015,
             vertexColors: true,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
         });
 
         const particleSystem = new THREE.Points(particlesGeometry, particleMaterial);
@@ -116,12 +137,26 @@ export class TextManager {
         this.particleGroups.forEach((particles) => {
             const positions = particles.geometry.attributes.position.array;
             for (let i = 0; i < positions.length; i += 3) {
-                positions[i] += Math.sin(delta + i) * 0.001;
-                positions[i + 1] += Math.cos(delta + i) * 0.001;
-                positions[i + 2] += Math.sin(delta + i) * 0.001;
+                positions[i] += Math.sin(delta + i) * 0.01;
+                positions[i + 1] += Math.cos(delta + i) * 0.01;
+                positions[i + 2] += Math.sin(delta + i) * 0.01;
             }
             particles.geometry.attributes.position.needsUpdate = true;
         });
+    }
+
+    showNextText() {
+        if (!this.isLocked) return;
+        // Implementation for showing next text will go here
+    }
+
+    showPreviousText() {
+        if (!this.isLocked) return;
+        // Implementation for showing previous text will go here
+    }
+
+    unlock() {
+        this.isLocked = false;
     }
 
     dispose() {

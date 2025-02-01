@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'https://unpkg.com/three@0.138.0/build/three.module.js';
 import { config, getResponsiveConfig, animationVars } from './config.js';
 
 export class ParticleSystem {
@@ -46,32 +46,24 @@ export class ParticleSystem {
                 uniform float opacity;
                 
                 void main() {
-                    // Calculate distance from center of point
                     vec2 center = gl_PointCoord - vec2(0.5);
                     float dist = length(center);
                     
-                    // Discard pixels outside circle
                     if (dist > 0.5) {
                         discard;
                     }
                     
-                    // Create three-layered effect: core, inner glow, and outer glow
                     float core = 1.0 - smoothstep(0.0, 0.15, dist);
                     float innerGlow = 1.0 - smoothstep(0.15, 0.35, dist);
                     float outerGlow = 1.0 - smoothstep(0.35, 0.5, dist);
                     
-                    // Combine layers with different intensities
                     float intensity = core * 1.0 + innerGlow * 0.5 + outerGlow * 0.2;
-                    intensity = pow(intensity, 1.5); // Slightly sharper falloff
+                    intensity = pow(intensity, 1.5);
                     
-                    // Add subtle variation to prevent banding
                     float noise = fract(sin(dot(gl_PointCoord, vec2(12.9898, 78.233))) * 43758.5453);
                     intensity += noise * 0.015 - 0.0075;
                     
-                    // Create a brighter core
-                    vec3 finalColor = color * (1.0 + core * 0.5); // Boost core brightness
-                    
-                    // Output color with enhanced definition
+                    vec3 finalColor = color * (1.0 + core * 0.5);
                     gl_FragColor = vec4(finalColor, opacity * intensity);
                 }
             `,

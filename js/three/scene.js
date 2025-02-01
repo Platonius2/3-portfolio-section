@@ -1,8 +1,7 @@
-import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { config } from './config.js';
+import * as THREE from 'https://unpkg.com/three@0.138.0/build/three.module.js';
+import { EffectComposer } from 'https://unpkg.com/three@0.138.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://unpkg.com/three@0.138.0/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'https://unpkg.com/three@0.138.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 export class SceneManager {
     constructor() {
@@ -33,14 +32,16 @@ export class SceneManager {
     }
 
     setupCamera() {
+        // Adjust FOV based on screen aspect ratio
         const aspectRatio = window.innerWidth / window.innerHeight;
         const baseFOV = 45;
-        const fov = aspectRatio < 1 ? baseFOV * 1.5 : baseFOV;
+        const fov = aspectRatio < 1 ? baseFOV * 1.5 : baseFOV; // Increase FOV for portrait mode
         const near = 1;
         const far = 10000;
         
         this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, near, far);
         
+        // Calculate camera distance based on screen size and aspect ratio
         const baseDistance = Math.max(
             100,
             (window.innerHeight / 2) * (aspectRatio < 1 ? 1.2 : 1)
@@ -63,15 +64,16 @@ export class SceneManager {
 
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.2,
-            0.35,
-            0.15
+            1.2,    // Increased base bloom intensity
+            0.35,   // Slightly reduced radius for better definition
+            0.15    // Lower threshold to catch more of the cyan
         );
 
-        bloomPass.threshold = 0.12;
-        bloomPass.strength = 1.4;
-        bloomPass.radius = 0.75;
-        bloomPass.exposure = 0.9;
+        // Fine-tune bloom parameters
+        bloomPass.threshold = 0.12;     // Lower threshold to catch more particles
+        bloomPass.strength = 1.4;       // Increased strength for better visibility
+        bloomPass.radius = 0.75;        // Slightly tighter radius for definition
+        bloomPass.exposure = 0.9;       // Slightly increased exposure
 
         this.composer.addPass(bloomPass);
     }

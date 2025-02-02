@@ -28,11 +28,11 @@ export const getResponsiveConfig = () => {
     };
     
     // Particle configuration with responsive sizing
-    const baseParticleCount = 5000;
+    const baseParticleCount = 4000;
     const particleScaleFactor = Math.max(0.3, Math.min(1, Math.min(screenWidth / referenceWidth, screenHeight / referenceHeight)));
     const particleSize = screenWidth <= 1250 
-        ? Math.min(screenWidth, screenHeight) * 0.002  // Larger particles for small screens
-        : Math.min(screenWidth, screenHeight) * 0.001; // Normal size for large screens
+        ? Math.min(screenWidth, screenHeight) * 0.01  // Slightly larger particles for more blur area
+        : Math.min(screenWidth, screenHeight) * 0.012; // Slightly larger particles for more blur area
     
     return {
         // Text configuration
@@ -48,9 +48,9 @@ export const getResponsiveConfig = () => {
         morphAnimationSpeed: 18,
         
         // Post-processing configuration
-        bloomStrength: 1.4,
-        bloomRadius: 0.75,
-        bloomThreshold: 0.12,
+        bloomStrength: 0.8,    // Reduced strength for more subtle glow
+        bloomRadius: 1.5,      // Increased radius for wider, more diffused spread
+        bloomThreshold: 0.05,  // Lower threshold for more subtle effect
         
         // Resources
         typeface: 'https://threejs.org/examples/fonts/droid/droid_sans_bold.typeface.json'

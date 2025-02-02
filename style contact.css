@@ -64,6 +64,8 @@
     overflow: hidden;
     position: relative;
     z-index: 1;
+    padding: 2rem;
+    box-sizing: border-box;
 }
 
 .contact-container {
@@ -73,7 +75,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0 2rem;
+    padding: 2rem;
     position: relative;
     z-index: 2;
 }
@@ -86,6 +88,7 @@
     width: 100%;
     position: relative;
     z-index: 2;
+    margin: 2rem 0;
 }
 
 /* Footer trigger positioning */
@@ -257,7 +260,7 @@
 }
 
 .contact-logo {
-    width: 1200px;
+    width: min(90vw, 1200px);
     height: auto;
     position: absolute;
     top: 50%;
@@ -267,6 +270,7 @@
     filter: brightness(1);
     z-index: 1;
     pointer-events: none;
+    max-width: 100%;
 }
 
 @media screen and (max-width: 768px) {
@@ -287,11 +291,20 @@
     }
     
     .contact-content {
-        gap: 3rem;
+        gap: 2.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .contact-container {
+        padding: 1rem;
+    }
+
+    .contact-section {
+        padding: 1rem;
     }
 
     .contact-logo {
-        width: 700px;
+        width: min(95vw, 700px);
     }
 }
 

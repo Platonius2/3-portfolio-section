@@ -53,6 +53,10 @@ export class ParticleSystem {
                 uniform vec3 color;
                 uniform float opacity;
                 
+                float gaussian(float x, float sigma) {
+                    return exp(-(x * x) / (2.0 * sigma * sigma));
+                }
+                
                 void main() {
                     vec2 center = gl_PointCoord - vec2(0.5);
                     float dist = length(center);
@@ -61,22 +65,33 @@ export class ParticleSystem {
                         discard;
                     }
                     
-                    float core = smoothstep(0.15, 0.0, dist);
-                    float edge = smoothstep(0.5, 0.15, dist);
-                    float intensity = core + edge * 0.3;
+                    // Natural light falloff using inverse square law with gaussian smoothing
+                    float sigma = 0.15;  // Controls the width of the gaussian
+                    float coreSize = 0.06;  // Smaller core for more intensity
                     
-                    float alpha = intensity * opacity;
-                    if (alpha < 0.01) discard;
+                    // Brighter core with sharper edge
+                    float core = gaussian(dist / coreSize, 0.25) * 1.2;
                     
-                    vec3 finalColor = color * (1.0 + core * 0.2);
+                    // Enhanced glow with better falloff
+                    float glow = gaussian(dist, sigma) * 0.4 / (1.0 + dist * 6.0);
+                    
+                    // Intensified blend
+                    float intensity = core + glow * (1.0 - core * 0.3);
+                    
+                    // Enhanced alpha for better visibility
+                    float alpha = intensity * opacity * (1.0 - pow(dist * 1.6, 2.0));
+                    if (alpha < 0.001) discard;
+                    
+                    // Increased color brightness
+                    vec3 finalColor = color * (1.0 + core * 0.8 + glow * 0.2);
                     gl_FragColor = vec4(finalColor, alpha);
                 }
             `,
             transparent: true,
-            blending: THREE.CustomBlending,
+            blending: THREE.AdditiveBlending,
             blendEquation: THREE.AddEquation,
             blendSrc: THREE.SrcAlphaFactor,
-            blendDst: THREE.OneMinusSrcAlphaFactor,
+            blendDst: THREE.OneFactor,
             depthWrite: false,
             depthTest: true
         });
@@ -127,7 +142,7 @@ export class ParticleSystem {
             });
         }
 
-        // Morph particles with scale and animation
+        // Morph particles with scale and curved animation
         const positions = this.particles.attributes.position.array;
         const scales = this.particles.attributes.scale.array;
         const newPositions = newParticles.attributes.position.array;
@@ -149,60 +164,99 @@ export class ParticleSystem {
                 scale: newScales[i]
             };
 
-            // Calculate animation parameters
+            // Calculate radius for curved path based on distance
             const dx = targetVertex.x - currentVertex.x;
             const dy = targetVertex.y - currentVertex.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const radius = distance * 0.8;
-            const delay = Math.random() * 0.2;
-            const duration = 1.0 + Math.random() * 0.25;
+            const dz = targetVertex.z - currentVertex.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            // Random timing for each particle
+            const delay = Math.random() * 0.3;
+            const duration = 1.125 + Math.random() * 0.375;
+
+            // Store original values
+            const startX = currentVertex.x;
+            const startY = currentVertex.y;
+            const startZ = currentVertex.z;
+
+            // Calculate control points for the curve
+            // We'll use two control points to create a smooth S-curve
+            const ctrl1 = {
+                x: startX + dx * 0.25 + (Math.random() - 0.5) * distance * 0.8,
+                y: startY + dy * 0.25 + (Math.random() - 0.5) * distance * 0.8,
+                z: startZ + dz * 0.25 + Math.random() * distance * 6.0 // Tripled from 2.0
+            };
+            
+            const ctrl2 = {
+                x: startX + dx * 0.75 + (Math.random() - 0.5) * distance * 0.8,
+                y: startY + dy * 0.75 + (Math.random() - 0.5) * distance * 0.8,
+                z: startZ + dz * 0.75 - Math.random() * distance * 6.0 // Tripled from 2.0
+            };
 
             if (hasGSAPCore) {
-                if (hasBezierPlugin) {
-                    // Use bezier animation if plugin is available
-                    gsap.to(currentVertex, {
-                        duration: duration,
-                        ease: "power1.inOut",
-                        scale: targetVertex.scale,
-                        delay: delay,
-                        bezier: {
-                            type: "thru",
-                            curviness: 1,
-                            values: [
-                                { x: currentVertex.x, y: currentVertex.y, z: currentVertex.z },
-                                { 
-                                    x: currentVertex.x + (dx * 0.25) + (Math.random() - 0.5) * (radius * 0.2),
-                                    y: currentVertex.y + (dy * 0.25) + Math.sin(Math.PI * 0.25) * radius,
-                                    z: currentVertex.z + Math.cos(Math.PI * 0.25) * (radius * 0.5)
-                                },
-                                { 
-                                    x: currentVertex.x + (dx * 0.5) + (Math.random() - 0.5) * (radius * 0.2),
-                                    y: currentVertex.y + (dy * 0.5) + Math.sin(Math.PI * 0.5) * radius,
-                                    z: currentVertex.z + Math.cos(Math.PI * 0.5) * (radius * 0.5)
-                                },
-                                { 
-                                    x: currentVertex.x + (dx * 0.75) + (Math.random() - 0.5) * (radius * 0.2),
-                                    y: currentVertex.y + (dy * 0.75) + Math.sin(Math.PI * 0.75) * radius,
-                                    z: currentVertex.z + Math.cos(Math.PI * 0.75) * (radius * 0.5)
-                                },
-                                { x: targetVertex.x, y: targetVertex.y, z: targetVertex.z }
-                            ]
-                        },
-                        onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
-                    });
-                } else {
-                    // Fallback to simple animation if plugin isn't available
-                    gsap.to(currentVertex, {
-                        duration: duration,
-                        ease: "power1.inOut",
-                        x: targetVertex.x,
-                        y: targetVertex.y,
-                        z: targetVertex.z,
-                        scale: targetVertex.scale,
-                        delay: delay,
-                        onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
-                    });
-                }
+                const progressObj = { value: 0 };
+                
+                gsap.to(progressObj, {
+                    value: 1,
+                    duration: duration,
+                    delay: delay,
+                    ease: "power2.inOut", // Smooth acceleration and deceleration
+                    onUpdate: () => {
+                        const t = progressObj.value;
+                        
+                        // Quadratic Bezier curve calculation
+                        // P = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+                        // Where P₀ is start, P₁ is control point, P₂ is end
+                        const t1 = 1 - t;
+                        const t2 = t1 * t1;
+                        const t3 = 2 * t1 * t;
+                        const t4 = t * t;
+                        
+                        // First half of the curve (start to ctrl1 to ctrl2)
+                        const x1 = t2 * startX + t3 * ctrl1.x + t4 * ctrl2.x;
+                        const y1 = t2 * startY + t3 * ctrl1.y + t4 * ctrl2.y;
+                        const z1 = t2 * startZ + t3 * ctrl1.z + t4 * ctrl2.z;
+                        
+                        // Second half of the curve (ctrl1 to ctrl2 to target)
+                        const x2 = t2 * ctrl1.x + t3 * ctrl2.x + t4 * targetVertex.x;
+                        const y2 = t2 * ctrl1.y + t3 * ctrl2.y + t4 * targetVertex.y;
+                        const z2 = t2 * ctrl1.z + t3 * ctrl2.z + t4 * targetVertex.z;
+                        
+                        // Blend between the two curves based on progress
+                        currentVertex.x = x1 * (1 - t) + x2 * t;
+                        currentVertex.y = y1 * (1 - t) + y2 * t;
+                        currentVertex.z = z1 * (1 - t) + z2 * t;
+                        currentVertex.scale = scales[i] + (targetVertex.scale - scales[i]) * t;
+                        
+                        this.updateParticle(i3, currentVertex, positions, scales);
+                    }
+                });
+            } else {
+                // Enhanced fallback animation with multiple tweens
+                const midZ = startZ + (Math.random() - 0.5) * distance;
+                
+                // First half of the animation
+                gsap.to(currentVertex, {
+                    duration: duration * 0.5,
+                    ease: "power2.inOut",
+                    x: startX + dx * 0.5 + (Math.random() - 0.5) * distance * 0.3,
+                    y: startY + dy * 0.5 + (Math.random() - 0.5) * distance * 0.3,
+                    z: midZ,
+                    delay: delay,
+                    onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
+                });
+                
+                // Second half of the animation
+                gsap.to(currentVertex, {
+                    duration: duration * 0.5,
+                    ease: "power2.inOut",
+                    x: targetVertex.x,
+                    y: targetVertex.y,
+                    z: targetVertex.z,
+                    scale: targetVertex.scale,
+                    delay: delay + duration * 0.5,
+                    onUpdate: () => this.updateParticle(i3, currentVertex, positions, scales)
+                });
             }
         }
 

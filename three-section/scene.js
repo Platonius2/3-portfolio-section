@@ -29,7 +29,9 @@ export class SceneManager {
         this.renderer.toneMapping = THREE.NoToneMapping;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.setClearColor(0x000000, 0);
-        this.renderer.autoClear = false;
+        this.renderer.autoClear = true;
+        this.renderer.autoClearColor = true;
+        this.renderer.autoClearDepth = true;
         
         const container = document.querySelector('.canvas-container');
         container.appendChild(this.renderer.domElement);
@@ -113,10 +115,10 @@ export class SceneManager {
             0.85
         );
 
-        bloomPass.threshold = 0.85;
-        bloomPass.strength = 0.5;
-        bloomPass.radius = 0.4;
-        bloomPass.exposure = 0.8;
+        bloomPass.threshold = 0.05;
+        bloomPass.strength = 0.8;
+        bloomPass.radius = 1.5;
+        bloomPass.exposure = 0.6;
         bloomPass.clear = true;
         bloomPass.clearAlpha = true;
         bloomPass.renderToScreen = true;
@@ -147,10 +149,8 @@ export class SceneManager {
     }
 
     render() {
-        // Clear everything
+        // Clear with specific buffers
         this.renderer.clear(true, true, true);
-        this.renderer.clearColor();
-        this.renderer.clearDepth();
         
         // Ensure scene is transparent
         this.scene.background = null;

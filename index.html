@@ -14,7 +14,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css?family=IBM%20Plex%20Sans:300,500" rel="stylesheet">
   
-  <!-- Three.js Dependencies -->
+  <!-- GSAP with Plugins - Load these first -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/BezierPlugin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/MotionPathPlugin.min.js"></script>
+  <script>
+    // Register GSAP plugins and verify they're loaded
+    if (typeof gsap === 'undefined') {
+      console.error('GSAP not loaded!');
+    } else {
+      gsap.registerPlugin(CustomEase, BezierPlugin, MotionPathPlugin);
+      if (!gsap.plugins.BezierPlugin || !gsap.plugins.MotionPathPlugin) {
+        console.error('Required GSAP plugins not registered!');
+      } else {
+        console.log('GSAP and plugins loaded successfully');
+      }
+    }
+  </script>
+  
+  <!-- Three.js Dependencies - Load after GSAP -->
   <script type="importmap">
   {
       "imports": {
@@ -28,16 +47,48 @@
   }
   </script>
   
-  <!-- GSAP with Plugins -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/BezierPlugin.min.js"></script>
+  <!-- Scroll to top on refresh -->
   <script>
-    // Register GSAP plugins
-    gsap.registerPlugin(CustomEase, BezierPlugin);
+    window.onbeforeunload = function () {
+      window.scrollTo(0, 0);
+    }
+    
+    // Additional check to ensure we're at the top when the page loads
+    window.onload = function() {
+      window.scrollTo(0, 0);
+      history.scrollRestoration = 'manual';
+
+      // Add scroll event listener to handle three.js overlay visibility
+      const threeSection = document.querySelector('.three-section');
+      const portfolio = document.querySelector('#portfolio');
+      const contact = document.querySelector('#contact');
+      const scrollIndicator = document.querySelector('.scroll-indicator');
+      
+      window.addEventListener('scroll', () => {
+        const portfolioTop = portfolio.getBoundingClientRect().top;
+        const contactTop = contact.getBoundingClientRect().top;
+        const viewportHeight = window.innerHeight;
+        
+        // Handle three.js overlay
+        if (portfolioTop <= viewportHeight * 2) {
+          const progress = 1 - (portfolioTop - viewportHeight) / viewportHeight;
+          const translateY = Math.min(Math.max(progress * 100, 0), 100);
+          threeSection.style.transform = `translateY(-${translateY}vh)`;
+        } else {
+          threeSection.style.transform = 'translateY(0)';
+        }
+
+        // Handle scroll indicator visibility
+        if (contactTop <= viewportHeight) {
+          scrollIndicator.classList.add('hide');
+        } else {
+          scrollIndicator.classList.remove('hide');
+        }
+      });
+    }
   </script>
   
-  <!-- Module Scripts -->
+  <!-- Module Scripts - Load last -->
   <script type="module" src="./script-team-section.js"></script>
   <script type="module" src="./bg test/main.js"></script>
   <script type="module" src="./three-section/main.js"></script>
@@ -94,28 +145,29 @@
     }
     /* Three.js Overlay Styles */
     .three-section {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
         overflow: hidden;
         background: none !important;
-        mix-blend-mode: screen;
+        mix-blend-mode: plus-lighter;
         z-index: 2;
         pointer-events: none;
+        will-change: transform;
     }
 
     .three-section canvas {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         pointer-events: none;
-        mix-blend-mode: screen;
+        mix-blend-mode: plus-lighter;
         background: none !important;
-        z-index: 2;
+        z-index: -2;
     }
 
     .canvas-container {
@@ -174,6 +226,46 @@
         z-index: 1;
         position: relative;
     }
+
+    /* Scroll Indicator Styles */
+    .scroll-indicator {
+        position: fixed;
+        bottom: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        animation: bounce 2s infinite;
+        opacity: 0.7;
+    }
+
+    .scroll-indicator svg {
+        width: 24px;
+        height: 24px;
+        color: white;
+    }
+
+    .scroll-indicator.hide {
+        opacity: 0;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateX(-50%) translateY(0);
+        }
+        40% {
+            transform: translateX(-50%) translateY(-10px);
+        }
+        60% {
+            transform: translateX(-50%) translateY(-5px);
+        }
+    }
   </style>
 </head>
 <body>
@@ -195,22 +287,24 @@
     <!-- Background Gradient -->
     <canvas id="gradient"></canvas>
 
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+        </svg>
+    </div>
+
     <!-- Main Content -->
     <main class="page-wrapper">
-        <!-- Three.js Text Section -->
+        <!-- Empty Section 1 -->
         <section class="section">
-            <!-- Three.js Overlay -->
-            <div class="three-section">
-                <div class="canvas-container"></div>
-                <div class="triggers">
-                    <span data-color="#00E5FF">14.8M+
-<br>VIEWS</span>
-                    <span data-color="#FFA500">140+
-<br>PROJECTS</span>
-                    <span data-color="#FF69B4">$50K+
-<br>REVENUE</span>
-                </div>
-            </div>
+        </section>
+
+        <!-- Empty Section 2 -->
+        <section class="section">
+        </section>
+        <!-- Empty Section 3-->
+        <section class="section">
         </section>
 
         <!-- React Root Section -->
@@ -512,10 +606,10 @@ https://devloop01.github.io/voyage-slider/images/machu-pichu.jpg" alt="Image 2" 
                 <div class="contact-content">
                     <p class="contact-inquiry-text">for inquiries contact us via</p>
                     <h1 class="contact-email">MEDIA@FFWD.SPACE</h1>
-                    <button class="contact-button" onclick="window.location.href='mailto:MEDIA@FFWD.SPACE'">
+                    <a href="mailto:MEDIA@FFWD.SPACE" target="_blank" class="contact-button">
                         <span class="text">CONTACT VIA EMAIL</span>
                         <span class="shimmer"></span>
-                    </button>
+                    </a>
                     <img src="logo fast forward media white.png" alt="Fast Forward Media Logo" class="contact-logo">
                 </div>
             </div>

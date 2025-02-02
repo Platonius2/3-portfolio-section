@@ -28,149 +28,101 @@ function initializeScrolling() {
         }, []);
 
         const navDots = document.querySelectorAll('.section-nav button');
-        let isScrolling = false;
         let currentSectionIndex = 0;
-        let lastScrollTime = Date.now();
-        const scrollThreshold = 100;
 
-        // Ensure we have sections and nav dots before proceeding
-        if (!sections.length || !navDots.length) {
-            console.warn('Missing sections or navigation dots');
-            return;
-        }
+        // Add strict scroll lock
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        // Watch for Three.js completion
+        const checkThreeJsComplete = () => {
+            if (window.threeJsComplete) {
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+            } else {
+                requestAnimationFrame(checkThreeJsComplete);
+            }
+        };
+        checkThreeJsComplete();
 
         function updateActiveDot(index) {
-            if (index >= 0 && index < navDots.length) {
-                navDots.forEach(dot => dot.classList.remove('active'));
-                navDots[index].classList.add('active');
-                currentSectionIndex = index;
-            }
+            if (index < 0 || index >= sections.length) return;
+            navDots.forEach(dot => dot.classList.remove('active'));
+            navDots[index].classList.add('active');
+            currentSectionIndex = index;
         }
 
         function getCurrentSectionIndex() {
-            const viewportMiddle = window.innerHeight / 2;
-            let closest = { index: 0, distance: Infinity };
-
-            sections.forEach((section, index) => {
-                if (!section) return;
-                const rect = section.getBoundingClientRect();
-                const distance = Math.abs(rect.top + rect.height / 2 - viewportMiddle);
-                if (distance < closest.distance) {
-                    closest = { index, distance };
-                }
-            });
-
-            return closest.index;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const sectionHeight = window.innerHeight;
+            return Math.round(scrollTop / sectionHeight);
         }
 
-        function smoothScrollToSection(index) {
-            // Validate index and section existence
-            if (isScrolling || index < 0 || index >= sections.length) {
-                return;
-            }
+        function scrollToSection(index) {
+            if (!window.threeJsComplete && index > 0) return;
 
-            const targetSection = sections[index];
-            if (!targetSection || typeof targetSection.offsetTop !== 'number') {
-                console.warn('Invalid target section');
-                return;
-            }
+            if (index < 0 || index >= sections.length || !sections[index]) return;
             
-            isScrolling = true;
-            const startPosition = window.scrollY;
-            const targetPosition = targetSection.offsetTop;
-            const startTime = performance.now();
-            const duration = 1000;
-
-            function easeInOutQuint(t) {
-                return t < 0.5 
-                    ? 16 * t * t * t * t * t 
-                    : 1 - Math.pow(-2 * t + 2, 5) / 2;
-            }
-
-            function animate(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                const easedProgress = easeInOutQuint(progress);
-                const currentPosition = startPosition + (targetPosition - startPosition) * easedProgress;
-                
-                window.scrollTo({
-                    top: currentPosition,
-                    behavior: 'auto' // Use auto to prevent conflicts with smooth scrolling
-                });
-                
-                updateActiveDot(index);
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    setTimeout(() => {
-                        isScrolling = false;
-                        // Verify final position and update dot if needed
-                        const finalIndex = getCurrentSectionIndex();
-                        if (finalIndex !== index) {
-                            updateActiveDot(finalIndex);
-                        }
-                    }, 100);
-                }
-            }
-
-            requestAnimationFrame(animate);
+            const targetPosition = sections[index].offsetTop;
+            window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+            });
+            
+            updateActiveDot(index);
         }
 
         // Handle navigation dot clicks
         navDots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
-                if (!isScrolling && !document.querySelector('.overlay.active')) {
-                    smoothScrollToSection(index);
-                }
+                if (!window.threeJsComplete && index > 0) return;
+                scrollToSection(index);
             });
         });
 
         // Handle keyboard navigation
         document.addEventListener('keydown', (e) => {
-            if (isScrolling || document.querySelector('.overlay.active')) return;
-
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
-                const currentIndex = getCurrentSectionIndex();
-                const direction = e.key === 'ArrowDown' ? 1 : -1;
-                const newIndex = Math.max(0, Math.min(sections.length - 1, currentIndex + direction));
+                if (!window.threeJsComplete && e.key === 'ArrowDown') return;
                 
-                if (newIndex !== currentIndex) {
-                    smoothScrollToSection(newIndex);
+                const direction = e.key === 'ArrowDown' ? 1 : -1;
+                const newIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+                
+                if (newIndex !== currentSectionIndex) {
+                    scrollToSection(newIndex);
                 }
             }
         });
 
-        // Handle wheel events with debounce
-        let wheelTimeout;
+        // Simple wheel event handler
         window.addEventListener('wheel', (e) => {
-            const now = Date.now();
-            if (isScrolling || document.querySelector('.overlay.active') || now - lastScrollTime < scrollThreshold) {
-                e.preventDefault();
-                return;
-            }
-            lastScrollTime = now;
-
-            clearTimeout(wheelTimeout);
-            wheelTimeout = setTimeout(() => {
-                const currentIndex = getCurrentSectionIndex();
-                updateActiveDot(currentIndex);
-            }, 150);
-
+            e.preventDefault();
+            if (!window.threeJsComplete && e.deltaY > 0) return;
+            
             const direction = e.deltaY > 0 ? 1 : -1;
-            const currentIndex = getCurrentSectionIndex();
-            const newIndex = Math.max(0, Math.min(sections.length - 1, currentIndex + direction));
-
-            if (newIndex !== currentIndex) {
-                e.preventDefault();
-                smoothScrollToSection(newIndex);
+            const newIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+            
+            if (newIndex !== currentSectionIndex) {
+                scrollToSection(newIndex);
             }
         }, { passive: false });
 
-        // Initial dot update
-        updateActiveDot(getCurrentSectionIndex());
+        // Add scroll event listener to update active dot during manual scrolling
+        window.addEventListener('scroll', () => {
+            if (!window.threeJsComplete) {
+                window.scrollTo(0, 0);
+                return;
+            }
+            const index = getCurrentSectionIndex();
+            if (index !== currentSectionIndex) {
+                updateActiveDot(index);
+            }
+        }, { passive: true });
+
+        // Initial dot update and scroll position
+        updateActiveDot(0);
+        window.scrollTo(0, 0);
     };
 
     // Start the initialization process

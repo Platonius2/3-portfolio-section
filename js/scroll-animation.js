@@ -68,29 +68,40 @@ export class ScrollAnimation {
 
         // Handle touch events for mobile
         let touchStartY = 0;
-        let lastTouchY = 0;
+        let lastTouchTime = 0;
+        const touchDelay = 300; // 0.3 second delay between swipes
         
         window.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            lastTouchY = touchStartY;
+            if (this.isLocked) {
+                e.preventDefault();
+                touchStartY = e.touches[0].clientY;
+            }
         }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
             if (this.isLocked) {
                 e.preventDefault();
-                
-                const touchY = e.touches[0].clientY;
-                const deltaY = lastTouchY - touchY;
-                const scrollingDown = deltaY > 0;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            if (this.isLocked) {
+                e.preventDefault();
                 
                 const now = Date.now();
-                if (now - this.lastScrollTime < this.scrollThreshold) return;
-
-                if (Math.abs(deltaY) > 5) { // Add a small threshold for touch movement
+                if (now - lastTouchTime < touchDelay) return;
+                
+                const touchEndY = e.changedTouches[0].clientY;
+                const deltaY = touchStartY - touchEndY;
+                
+                // Only trigger if swipe is long enough
+                if (Math.abs(deltaY) > 50) {
+                    const scrollingDown = deltaY > 0;
+                    
                     if (scrollingDown && this.textManager.currentIndex < 2) {
                         this.textManager.currentIndex++;
                         this.textManager.updateActiveText(this.textManager.currentIndex);
-                        this.lastScrollTime = now;
+                        lastTouchTime = now;
                         
                         if (this.textManager.currentIndex === 2) {
                             this.isLocked = false;
@@ -99,12 +110,10 @@ export class ScrollAnimation {
                     } else if (!scrollingDown && this.textManager.currentIndex > 0) {
                         this.textManager.currentIndex--;
                         this.textManager.updateActiveText(this.textManager.currentIndex);
-                        this.lastScrollTime = now;
+                        lastTouchTime = now;
                     }
                 }
             }
-            
-            lastTouchY = touchY;
         }, { passive: false });
     }
 
@@ -114,150 +123,161 @@ export class ScrollAnimation {
         let isScrolling = false;
         let currentSectionIndex = 0;
         let lastScrollTime = Date.now();
-        const scrollThreshold = 100;
+        const scrollDelay = 300; // 0.3 seconds delay
 
-        // Update active section on scroll
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.5
-        };
+        // Enable smooth scrolling container
+        document.documentElement.style.scrollBehavior = 'smooth';
+        document.body.style.scrollSnapType = 'y mandatory';
+        sections.forEach(section => {
+            section.style.scrollSnapAlign = 'start';
+            section.style.scrollSnapStop = 'always';
+        });
 
-        const observerCallback = (entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const dots = document.querySelectorAll('.section-nav button');
-                    dots.forEach(dot => dot.classList.remove('active'));
-                    const index = Array.from(sections).indexOf(entry.target);
-                    if (index >= 0) {
-                        dots[index].classList.add('active');
-                        currentSectionIndex = index;
-                    }
-                }
-            });
-        };
-
-        const observer = new IntersectionObserver(observerCallback, observerOptions);
-        sections.forEach(section => observer.observe(section));
-
-        function smoothScrollToSection(index) {
-            if (isScrolling) return;
+        // Function to scroll to a specific section
+        function scrollToSection(index, force = false) {
+            if (!force && isScrolling) return;
+            
+            const now = Date.now();
+            if (!force && now - lastScrollTime < scrollDelay) return;
             
             isScrolling = true;
+            lastScrollTime = now;
+            
+            const targetSection = sections[index];
+            if (!targetSection) return;
+            
+            // Use scrollIntoView for better mobile compatibility
+            targetSection.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+            
+            // Update navigation dots
+            navDots.forEach((dot, i) => dot.classList.remove('active'));
+            navDots[index].classList.add('active');
+            
             currentSectionIndex = index;
-
-            const startPosition = window.scrollY;
-            const targetPosition = sections[index].offsetTop;
-            const startTime = performance.now();
-            const duration = 2500; // Longer duration for smoother animation
-
-            // Custom easing function with gradual acceleration and deceleration
-            function easeInOutQuint(t) {
-                return t < 0.5 
-                    ? 16 * t * t * t * t * t 
-                    : 1 - Math.pow(-2 * t + 2, 5) / 2;
-            }
-
-            function animate(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                // Apply easing
-                const easedProgress = easeInOutQuint(progress);
-                
-                // Calculate intermediate position
-                const currentPosition = startPosition + (targetPosition - startPosition) * easedProgress;
-                
-                // Perform the scroll
-                window.scrollTo(0, currentPosition);
-
-                // Update navigation dots
-                navDots.forEach(dot => dot.classList.remove('active'));
-                navDots[index].classList.add('active');
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    // Add a small delay before releasing the scroll lock
-                    setTimeout(() => {
-                        isScrolling = false;
-                    }, 100);
-                }
-            }
-
-            requestAnimationFrame(animate);
+            
+            // Reset scrolling flag after animation
+            setTimeout(() => {
+                isScrolling = false;
+            }, scrollDelay);
         }
 
-        // Smooth scrolling with footer handling
-        window.addEventListener('wheel', (e) => {
-            const now = Date.now();
-            if (isScrolling || now - lastScrollTime < scrollThreshold) {
+        // Enhanced touch handling for mobile
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let lastTouchTime = 0;
+        const touchDelay = 300;
+        let isSwiping = false;
+        let swipeThreshold = 50;
+        let initialScroll = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            if (isScrolling) return;
+            
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+            initialScroll = window.scrollY;
+            
+            // Reset swipe state
+            isSwiping = false;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isScrolling || isSwiping) {
                 e.preventDefault();
                 return;
             }
-            lastScrollTime = now;
 
-            const direction = e.deltaY > 0 ? 1 : -1;
-            const newIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+            const touchY = e.touches[0].clientY;
+            const touchX = e.touches[0].clientX;
+            const deltaY = touchStartY - touchY;
+            const deltaX = touchStartX - touchX;
 
-            if (newIndex !== currentSectionIndex) {
+            // Check if scrolling is more vertical than horizontal
+            if (Math.abs(deltaY) > Math.abs(deltaX)) {
                 e.preventDefault();
-                smoothScrollToSection(newIndex);
             }
         }, { passive: false });
 
-        // Handle navigation dot clicks
-        navDots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
-                if (!isScrolling) {
-                    smoothScrollToSection(index);
+        document.addEventListener('touchend', (e) => {
+            if (isScrolling || isSwiping) return;
+            
+            const now = Date.now();
+            if (now - lastTouchTime < touchDelay) return;
+            
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaY = touchStartY - touchEndY;
+            
+            // Only trigger if swipe is long enough and mostly vertical
+            if (Math.abs(deltaY) > swipeThreshold) {
+                isSwiping = true;
+                const direction = deltaY > 0 ? 1 : -1;
+                const nextIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+                
+                if (nextIndex !== currentSectionIndex) {
+                    scrollToSection(nextIndex);
+                    lastTouchTime = now;
+                    
+                    // Prevent default scroll behavior
+                    e.preventDefault();
                 }
-            });
-        });
+                
+                setTimeout(() => {
+                    isSwiping = false;
+                }, touchDelay);
+            }
+        }, { passive: false });
+
+        // Handle mouse wheel scrolling
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            if (isScrolling) return;
+            
+            const direction = e.deltaY > 0 ? 1 : -1;
+            const nextIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+            
+            if (nextIndex !== currentSectionIndex) {
+                scrollToSection(nextIndex);
+            }
+        }
 
         // Handle keyboard navigation
-        document.addEventListener('keydown', (e) => {
+        function handleKeydown(e) {
             if (isScrolling) return;
-
+            
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 const direction = e.key === 'ArrowDown' ? 1 : -1;
-                const newIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
+                const nextIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
                 
-                if (newIndex !== currentSectionIndex) {
-                    smoothScrollToSection(newIndex);
+                if (nextIndex !== currentSectionIndex) {
+                    scrollToSection(nextIndex);
                 }
             }
+        }
+
+        // Handle navigation dot clicks
+        function handleNavDotClick(index) {
+            scrollToSection(index, true); // Force scroll without delay for direct navigation
+        }
+
+        // Initialize event listeners
+        document.addEventListener('wheel', handleWheel, { passive: false });
+        document.addEventListener('keydown', handleKeydown);
+
+        // Set up navigation dots click handlers
+        navDots.forEach((dot, index) => {
+            dot.addEventListener('click', () => handleNavDotClick(index));
         });
 
-        // Handle touch events
-        let touchStartY = 0;
-        let touchStartTime = 0;
-
-        document.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            touchStartTime = Date.now();
-        }, { passive: true });
-
-        document.addEventListener('touchend', (e) => {
-            if (isScrolling) return;
-
-            const touchEndY = e.changedTouches[0].clientY;
-            const touchEndTime = Date.now();
-            
-            const distance = touchStartY - touchEndY;
-            const duration = touchEndTime - touchStartTime;
-            const velocity = Math.abs(distance / duration);
-
-            if (velocity > 0.3 && Math.abs(distance) > 50) {
-                const direction = distance > 0 ? 1 : -1;
-                const newIndex = Math.max(0, Math.min(sections.length - 1, currentSectionIndex + direction));
-                
-                if (newIndex !== currentSectionIndex) {
-                    smoothScrollToSection(newIndex);
-                }
-            }
-        }, { passive: true });
+        // Update current section on page load
+        window.addEventListener('load', () => {
+            currentSectionIndex = Math.floor(window.scrollY / window.innerHeight);
+            scrollToSection(currentSectionIndex, true);
+        });
     }
 }
 

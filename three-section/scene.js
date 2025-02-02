@@ -16,7 +16,7 @@ export class SceneManager {
 
     setupRenderer() {
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
+            antialias: window.devicePixelRatio < 2, // Only use antialias for lower pixel ratios
             alpha: true,
             premultipliedAlpha: false,
             stencil: false,
@@ -24,14 +24,20 @@ export class SceneManager {
             powerPreference: "high-performance",
             preserveDrawingBuffer: false
         });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Optimize pixel ratio for performance
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        this.renderer.setPixelRatio(pixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // Optimize renderer settings
         this.renderer.toneMapping = THREE.NoToneMapping;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.setClearColor(0x000000, 0);
         this.renderer.autoClear = true;
         this.renderer.autoClearColor = true;
         this.renderer.autoClearDepth = true;
+        this.renderer.info.autoReset = true; // Reset renderer stats automatically
         
         const container = document.querySelector('.canvas-container');
         container.appendChild(this.renderer.domElement);
@@ -81,20 +87,25 @@ export class SceneManager {
     }
 
     setupPostProcessing() {
+        // Create optimized render target
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        const renderTargetOptions = {
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            encoding: THREE.sRGBEncoding,
+            type: THREE.HalfFloatType, // More efficient than full float
+            stencilBuffer: false,
+            depthBuffer: true,
+            samples: pixelRatio < 2 ? 4 : 0, // Use MSAA only for lower pixel ratios
+            alpha: true,
+            premultiplyAlpha: false
+        };
+
         const renderTarget = new THREE.WebGLRenderTarget(
-            window.innerWidth, 
-            window.innerHeight, 
-            {
-                minFilter: THREE.LinearFilter,
-                magFilter: THREE.LinearFilter,
-                format: THREE.RGBAFormat,
-                encoding: THREE.sRGBEncoding,
-                type: THREE.HalfFloatType,
-                stencilBuffer: false,
-                depthBuffer: true,
-                alpha: true,
-                premultiplyAlpha: false
-            }
+            window.innerWidth * pixelRatio, 
+            window.innerHeight * pixelRatio,
+            renderTargetOptions
         );
 
         this.composer = new EffectComposer(this.renderer, renderTarget);
@@ -108,11 +119,15 @@ export class SceneManager {
         renderPass.clearAlpha = 0;
         this.composer.addPass(renderPass);
 
+        // Optimize bloom pass settings
         const bloomPass = new UnrealBloomPass(
-            new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.5,
-            0.4,
-            0.85
+            new THREE.Vector2(
+                window.innerWidth * pixelRatio,
+                window.innerHeight * pixelRatio
+            ),
+            0.5,  // Bloom strength
+            0.4,  // Radius
+            0.85  // Threshold
         );
 
         bloomPass.threshold = 0.05;
@@ -123,6 +138,8 @@ export class SceneManager {
         bloomPass.clearAlpha = true;
         bloomPass.renderToScreen = true;
 
+        // Enable selective bloom for better performance
+        bloomPass.selectedObjects = [];
         this.composer.addPass(bloomPass);
     }
 
@@ -144,8 +161,14 @@ export class SceneManager {
         this.camera.position.z = baseDistance;
         
         this.camera.updateProjectionMatrix();
+
+        // Optimize resize handling
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        const width = window.innerWidth * pixelRatio;
+        const height = window.innerHeight * pixelRatio;
+        
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.composer.setSize(window.innerWidth, window.innerHeight);
+        this.composer.setSize(width, height);
     }
 
     render() {
